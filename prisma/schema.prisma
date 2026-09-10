@@ -1,0 +1,377 @@
+// Avance — data model
+// Organisation -> Group -> Project -> Checkpoint hierarchy, plus a
+// deliberately separate Habit system (see section 30 of prd.md).
+//
+// NOTE: SQLite has no native enum support in Prisma, so "enum-like" fields
+// below are plain Strings. Their allowed values are defined as TypeScript
+// union types in src/lib/constants.ts — validate against those before writing.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  avatarSeed   String // drives a random-object avatar, no customisation
+  createdAt    DateTime @default(now())
+
+  orgMemberships   OrganisationMembership[]
+  groupMemberships GroupMembership[]
+  submissions      CheckpointSubmission[]  @relation("SubmittedBy")
+  reviewed         CheckpointSubmission[]  @relation("ReviewedBy")
+  progress         CheckpointProgress[]
+  habits           Habit[]
+  habitShares      HabitShare[]
+  todos            Todo[]
+  focusSessions    FocusSession[]
+  notifications    Notification[]
+  activityEvents   ActivityEvent[]
+  reactions        Reaction[]
+  auditLogs        AuditLog[]              @relation("AuditActor")
+  fairPlayChanges  FairPlayRecord[]        @relation("FairPlayActor")
+  interventionsMade Intervention[]         @relation("InterventionHost")
+  interventionsFor  Intervention[]         @relation("InterventionStudent")
+  createdOrgs      Organisation[]
+  createdGroups    Group[]
+  createdProjects  Project[]
+}
+
+// ---------------------------------------------------------------------------
+// Organisation hierarchy
+// ---------------------------------------------------------------------------
+
+// OrgRole: "HEAD" | "HOST" | "STUDENT"
+
+model Organisation {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  joinCode    String   @unique
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  memberships   OrganisationMembership[]
+  groups        Group[]
+  interventions Intervention[]
+}
+
+model OrganisationMembership {
+  id             String    @id @default(cuid())
+  userId         String
+  organisationId String
+  role           String    @default("STUDENT") // OrgRole
+  xp             Int       @default(0)
+  streakCurrent  Int       @default(0)
+  streakLongest  Int       @default(0)
+  lastActivityAt DateTime?
+  fairPlayScore  Int       @default(100)
+  joinedAt       DateTime  @default(now())
+
+  user            User             @relation(fields: [userId], references: [id])
+  organisation    Organisation     @relation(fields: [organisationId], references: [id])
+  fairPlayRecords FairPlayRecord[]
+
+  @@unique([userId, organisationId])
+}
+
+model Group {
+  id             String   @id @default(cuid())
+  organisationId String
+  name           String
+  createdById    String
+  createdAt      DateTime @default(now())
+
+  organisation   Organisation      @relation(fields: [organisationId], references: [id])
+  createdBy      User              @relation(fields: [createdById], references: [id])
+  memberships    GroupMembership[]
+  projects       Project[]
+  activityEvents ActivityEvent[]
+}
+
+model GroupMembership {
+  id       String   @id @default(cuid())
+  userId   String
+  groupId  String
+  joinedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  group Group @relation(fields: [groupId], references: [id])
+
+  @@unique([userId, groupId])
+}
+
+// ---------------------------------------------------------------------------
+// Projects & checkpoints
+// ---------------------------------------------------------------------------
+
+// ProjectStatus: "DRAFT" | "PUBLISHED" | "ARCHIVED"
+// VerificationMode: "AUTO" | "HOST_APPROVAL"
+// SourceType: "PDF" | "DOCX" | "TEXT" | "MANUAL"
+
+model Project {
+  id               String    @id @default(cuid())
+  groupId          String
+  title            String
+  description      String
+  requirements     String    @default("")
+  deadline         DateTime
+  status           String    @default("DRAFT")
+  verificationMode String    @default("AUTO")
+  aiGenerated      Boolean   @default(false)
+  sourceType       String    @default("MANUAL")
+  sourceExcerpt    String    @default("")
+  createdById      String
+  createdAt        DateTime  @default(now())
+  publishedAt      DateTime?
+
+  group          Group           @relation(fields: [groupId], references: [id])
+  createdBy      User            @relation(fields: [createdById], references: [id])
+  checkpoints    Checkpoint[]
+  activityEvents ActivityEvent[]
+  interventions  Intervention[]
+}
+
+model Checkpoint {
+  id                 String  @id @default(cuid())
+  projectId          String
+  order              Int
+  title              String
+  description        String
+  submissionRequired Boolean @default(true)
+  xpValue            Int     @default(10)
+  aiGenerated        Boolean @default(false)
+
+  project        Project                @relation(fields: [projectId], references: [id])
+  submissions    CheckpointSubmission[]
+  progress       CheckpointProgress[]
+  activityEvents ActivityEvent[]
+
+  @@unique([projectId, order])
+}
+
+// Explicit completion state per (checkpoint, student). Order among a
+// project's checkpoints determines which is "current" vs "locked" at read
+// time — no separate status enum needed here.
+model CheckpointProgress {
+  id           String    @id @default(cuid())
+  checkpointId String
+  userId       String
+  completed    Boolean   @default(false)
+  completedAt  DateTime?
+  xpAwarded    Int       @default(0)
+
+  checkpoint Checkpoint @relation(fields: [checkpointId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@unique([checkpointId, userId])
+}
+
+// SubmissionStatus: "PENDING" | "APPROVED" | "REJECTED"
+
+model CheckpointSubmission {
+  id              String    @id @default(cuid())
+  checkpointId    String
+  userId          String
+  attempt         Int       @default(1)
+  fileName        String
+  filePath        String
+  fileSize        Int
+  status          String    @default("PENDING")
+  submittedAt     DateTime  @default(now())
+  reviewedAt      DateTime?
+  reviewerId      String?
+  rejectionReason String?
+
+  checkpoint Checkpoint @relation(fields: [checkpointId], references: [id])
+  user       User       @relation("SubmittedBy", fields: [userId], references: [id])
+  reviewer   User?      @relation("ReviewedBy", fields: [reviewerId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// Fair play (accountability) — auditable, host-only, never AI or self edited
+// ---------------------------------------------------------------------------
+
+model FairPlayRecord {
+  id           String   @id @default(cuid())
+  membershipId String
+  delta        Int
+  reason       String
+  actorId      String
+  createdAt    DateTime @default(now())
+
+  membership OrganisationMembership @relation(fields: [membershipId], references: [id])
+  actor      User                   @relation("FairPlayActor", fields: [actorId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// Social accountability (activity feed + reactions)
+// ---------------------------------------------------------------------------
+
+// ActivityType: "CHECKPOINT_COMPLETED" | "PROJECT_COMPLETED" | "STREAK_MILESTONE"
+
+model ActivityEvent {
+  id             String   @id @default(cuid())
+  organisationId String
+  groupId        String?
+  userId         String
+  type           String
+  message        String
+  projectId      String?
+  checkpointId   String?
+  createdAt      DateTime @default(now())
+
+  user       User        @relation(fields: [userId], references: [id])
+  group      Group?      @relation(fields: [groupId], references: [id])
+  project    Project?    @relation(fields: [projectId], references: [id])
+  checkpoint Checkpoint? @relation(fields: [checkpointId], references: [id])
+  reactions  Reaction[]
+}
+
+model Reaction {
+  id              String   @id @default(cuid())
+  activityEventId String
+  actorId         String
+  emoji           String
+  createdAt       DateTime @default(now())
+
+  activityEvent ActivityEvent @relation(fields: [activityEventId], references: [id])
+  actor         User          @relation(fields: [actorId], references: [id])
+
+  @@unique([activityEventId, actorId, emoji])
+}
+
+// ---------------------------------------------------------------------------
+// Personal habit tracker — deliberately outside the org hierarchy
+// ---------------------------------------------------------------------------
+
+// HabitFrequency: "DAILY" | "WEEKLY"
+
+model Habit {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  frequency String   @default("DAILY")
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user        User              @relation(fields: [userId], references: [id])
+  completions HabitCompletion[]
+  shares      HabitShare[]
+}
+
+model HabitCompletion {
+  id        String   @id @default(cuid())
+  habitId   String
+  date      DateTime // day granularity
+  createdAt DateTime @default(now())
+
+  habit Habit @relation(fields: [habitId], references: [id])
+
+  @@unique([habitId, date])
+}
+
+model HabitShare {
+  id           String   @id @default(cuid())
+  habitId      String
+  sharedWithId String
+  createdAt    DateTime @default(now())
+
+  habit      Habit @relation(fields: [habitId], references: [id])
+  sharedWith User  @relation(fields: [sharedWithId], references: [id])
+
+  @@unique([habitId, sharedWithId])
+}
+
+// ---------------------------------------------------------------------------
+// Personal to-do list — deliberately outside the org hierarchy, like Habit
+// ---------------------------------------------------------------------------
+
+model Todo {
+  id          String    @id @default(cuid())
+  userId      String
+  title       String
+  done        Boolean   @default(false)
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// Focus Mode — personal session timer + history, outside the org hierarchy
+// ---------------------------------------------------------------------------
+
+model FocusSession {
+  id            String    @id @default(cuid())
+  userId        String
+  targetSeconds Int
+  actualSeconds Int       @default(0)
+  completed     Boolean   @default(false) // reached the full target vs. stopped early
+  startedAt     DateTime  @default(now())
+  endedAt       DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// Notifications, interventions, audit
+// ---------------------------------------------------------------------------
+
+// NotificationType: "DEADLINE_REMINDER" | "PROGRESS_REMINDER" | "HOST_ALERT" | "VERIFICATION" | "REACTION" | "SYSTEM"
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// InterventionType: "REMINDER" | "MESSAGE" | "SUPPORT_MATERIAL" | "DEADLINE_EXTENSION" | "CONTACT"
+
+model Intervention {
+  id             String   @id @default(cuid())
+  hostId         String
+  organisationId String
+  studentId      String
+  projectId      String?
+  type           String
+  note           String
+  createdAt      DateTime @default(now())
+
+  host         User         @relation("InterventionHost", fields: [hostId], references: [id])
+  student      User         @relation("InterventionStudent", fields: [studentId], references: [id])
+  organisation Organisation @relation(fields: [organisationId], references: [id])
+  project      Project?     @relation(fields: [projectId], references: [id])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  targetType String
+  targetId   String
+  meta       String   @default("{}")
+  createdAt  DateTime @default(now())
+
+  actor User @relation("AuditActor", fields: [actorId], references: [id])
+}
