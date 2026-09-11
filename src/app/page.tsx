@@ -1,47 +1,54 @@
 import Link from "next/link";
 import { getSessionUser } from "@/lib/session";
 import { Card, ProgressBar, Badge } from "@/components/ui";
+import { AeroShardsBackground } from "@/components/aero-shards-background";
 
 export default async function LandingPage() {
   const user = await getSessionUser();
 
   return (
     <div className="flex-1">
-      {/* Hero */}
-      <section className="mx-auto max-w-5xl px-4 pt-20 pb-16 text-center">
-        <Badge tone="accent" className="mb-5">A game layer for real-world work</Badge>
-        <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight leading-[1.1]">
-          Avance turns assignments into
-          <br className="hidden sm:block" /> measurable quests.
-        </h1>
-        <p className="mt-5 text-lg text-muted max-w-2xl mx-auto">
-          Institutions get visibility before deadlines become a crisis. Students always know
-          what to do next. Nobody discovers the problem on submission day.
-        </p>
-        <div className="mt-8 flex items-center justify-center gap-3">
-          {user ? (
-            <Link
-              href="/dashboard"
-              className="rounded-lg bg-accent text-accent-foreground px-5 py-2.5 text-sm font-medium hover:opacity-90"
-            >
-              Go to your dashboard
-            </Link>
-          ) : (
-            <>
+      {/* Hero — AeroShards renders a WebGPU background panel behind this
+          section only, so the rest of the page stays the plain theme
+          background; hero text is forced light since it sits on a fixed
+          dark panel regardless of light/dark mode. */}
+      <section className="relative isolate overflow-hidden">
+        <AeroShardsBackground backgroundColor="#0a0b10" shardColor="#8b85ff" accentColor="#5850ec" />
+        <div className="relative z-10 mx-auto max-w-5xl px-4 pt-20 pb-16 text-center">
+          <Badge tone="accent" className="mb-5">A game layer for real-world work</Badge>
+          <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight leading-[1.1] text-white">
+            Avance turns assignments into
+            <br className="hidden sm:block" /> measurable quests.
+          </h1>
+          <p className="mt-5 text-lg text-white/70 max-w-2xl mx-auto">
+            Institutions get visibility before deadlines become a crisis. Students always know
+            what to do next. Nobody discovers the problem on submission day.
+          </p>
+          <div className="mt-8 flex items-center justify-center gap-3">
+            {user ? (
               <Link
-                href="/register"
+                href="/dashboard"
                 className="rounded-lg bg-accent text-accent-foreground px-5 py-2.5 text-sm font-medium hover:opacity-90"
               >
-                Get started
+                Go to your dashboard
               </Link>
-              <Link
-                href="/login"
-                className="rounded-lg border border-border px-5 py-2.5 text-sm font-medium hover:bg-surface-muted"
-              >
-                Sign in
-              </Link>
-            </>
-          )}
+            ) : (
+              <>
+                <Link
+                  href="/register"
+                  className="rounded-lg bg-accent text-accent-foreground px-5 py-2.5 text-sm font-medium hover:opacity-90"
+                >
+                  Get started
+                </Link>
+                <Link
+                  href="/login"
+                  className="rounded-lg border border-white/30 text-white px-5 py-2.5 text-sm font-medium hover:bg-white/10"
+                >
+                  Sign in
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </section>
 

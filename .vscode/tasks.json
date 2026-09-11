@@ -1,0 +1,33 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "dev",
+            "type": "npm",
+            "script": "dev",
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "custom",
+                "pattern": {
+                    "regexp": "^\\[Error\\] (.*):(\\d+):(\\d+)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "▲ Next\\.js",
+                    "endsPattern": "✓ Ready in"
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "runOptions": {
+                "runOn": "default"
+            }
+        }
+    ]
+}

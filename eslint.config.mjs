@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored verbatim from React Bits (see comment at the top of the
+    // file) — not code we maintain, so it isn't held to our lint rules.
+    "src/components/AeroShards.jsx",
   ]),
 ]);
 
