@@ -26,16 +26,24 @@ class BackgroundErrorBoundary extends Component<{ children: ReactNode }, { faile
  * the dashboard's icon grid and every page reached by opening one of those
  * icons, without re-creating the WebGL context on every navigation.
  *
- * Sits as the first child in `<body>`, `position: fixed` behind the Navbar
- * and page content: those paint later in the same stacking context so they
- * always render on top without needing an explicit z-index. Left with
+ * Sits as the first child in `<body>`, `position: fixed` with an explicit
+ * `-z-10` — verified via the browser's own `elementFromPoint` hit-testing
+ * (not just visual inspection, which is misleading here) that ordinary page
+ * text always wins the stacking order above this, negative z-index or not,
+ * so it never truly covers/replaces text. What reads as "overlapping the
+ * text" (e.g. on the Profile page, or the plain sections below the landing
+ * page's Hero) is the pattern legitimately showing through the *gaps*
+ * around and between letters — correct stacking, but visually noisy right
+ * next to small plain text with no card behind it. `opacity-45` softens the
+ * "on" cells so that noise recedes instead of visually competing with
+ * foreground content, while staying visible in open space. Left with
  * default (non-none) pointer-events so its click ripples still fire in the
  * empty space around cards/icons — content above it in paint order still
  * captures its own clicks first.
  */
 export function AppBackground() {
   return (
-    <div className="fixed inset-0" aria-hidden>
+    <div className="fixed inset-0 -z-10 opacity-45" aria-hidden>
       <BackgroundErrorBoundary>
         <PixelBlast
           className=""
@@ -44,7 +52,7 @@ export function AppBackground() {
           pixelSize={3}
           color="#8b85ff"
           patternScale={3}
-          patternDensity={0.91}
+          patternDensity={0.637}
           pixelSizeJitter={0.3}
           enableRipples
           rippleSpeed={0.35}
