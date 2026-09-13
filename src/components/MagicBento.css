@@ -1,0 +1,184 @@
+/*
+ * Adapted from React Bits (DavidHDev/react-bits, Components/MagicBento).
+ * Retheme: the original hardcodes a dark (#120F17) card surface and a
+ * fixed purple (132, 0, 255) border-glow color. This version reads the
+ * app's existing design tokens (see src/app/globals.css) so cards match
+ * light/dark mode, and the border-glow now actually follows the
+ * `--glow-color` custom property each card sets (the original CSS never
+ * referenced it, so `glowColor` only ever tinted the particles/spotlight).
+ */
+
+.magic-bento-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .magic-bento-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .magic-bento-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.magic-bento-card {
+  --glow-color: 88, 80, 236;
+  --glow-x: 50%;
+  --glow-y: 50%;
+  --glow-intensity: 0;
+  --glow-radius: 200px;
+
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  text-align: center;
+  text-decoration: none;
+  overflow: hidden;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    opacity 0.2s ease;
+  /* Reset UA <button> defaults so it matches the <a>/<div> cards. */
+  width: 100%;
+  font: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+
+.magic-bento-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(var(--glow-color), 0.5);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.magic-bento-card:focus-visible {
+  outline: 2px solid rgba(var(--glow-color), 0.6);
+  outline-offset: 2px;
+}
+
+.magic-bento-card--disabled {
+  cursor: default;
+  opacity: 0.6;
+  border-style: dashed;
+}
+
+.magic-bento-card--disabled:hover {
+  transform: none;
+  border-color: var(--border);
+  box-shadow: none;
+}
+
+.magic-bento-card__icon {
+  display: flex;
+  height: 3.5rem;
+  width: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  font-size: 1.5rem;
+  position: relative;
+}
+
+.magic-bento-card__label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.2;
+  position: relative;
+}
+
+.magic-bento-card__description {
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.2;
+  position: relative;
+}
+
+.magic-bento-card--text-autohide .magic-bento-card__description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Border glow effect, tinted per-card via --glow-color */
+.magic-bento-card--border-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  background: radial-gradient(
+    var(--glow-radius) circle at var(--glow-x) var(--glow-y),
+    rgba(var(--glow-color), calc(var(--glow-intensity) * 0.8)) 0%,
+    rgba(var(--glow-color), calc(var(--glow-intensity) * 0.4)) 30%,
+    transparent 60%
+  );
+  border-radius: inherit;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.magic-bento-card--border-glow:hover {
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.15),
+    0 0 30px rgba(var(--glow-color), 0.2);
+}
+
+.magic-bento-particle-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.magic-bento-particle::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: rgba(var(--glow-color), 0.2);
+  border-radius: 50%;
+  z-index: -1;
+}
+
+/* Global spotlight styles */
+.magic-bento-global-spotlight {
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+  z-index: 200 !important;
+  pointer-events: none;
+}
+
+.magic-bento-section {
+  position: relative;
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .magic-bento-card {
+    transition: none;
+  }
+}

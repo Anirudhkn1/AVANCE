@@ -1,30 +1,22 @@
 "use server";
 
-import { AuthError } from "next-auth";
+import { redirect } from "next/navigation";
 import { z } from "zod";
-import bcrypt from "bcryptjs";
-import { signIn } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { randomAvatarSeed } from "@/lib/avatar";
 
 export async function loginAction(_prevState: string | undefined, formData: FormData): Promise<string | undefined> {
-  try {
-    await signIn("credentials", {
-      email: formData.get("email"),
-      password: formData.get("password"),
-      redirectTo: "/dashboard",
-    });
-  } catch (error) {
-    if (error instanceof AuthError) {
-      switch (error.type) {
-        case "CredentialsSignin":
-          return "Incorrect email or password.";
-        default:
-          return "Something went wrong signing you in.";
-      }
-    }
-    throw error;
-  }
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  if (!email || !password) return "Enter your email and password.";
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) return "Incorrect email or password.";
+
+  redirect("/dashboard");
 }
 
 const registerSchema = z.object({
@@ -47,20 +39,42 @@ export async function registerAction(_prevState: string | undefined, formData: F
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return "An account with that email already exists.";
 
-  const passwordHash = await bcrypt.hash(password, 10);
-  await prisma.user.create({
-    data: { name, email, passwordHash, avatarSeed: randomAvatarSeed() },
+  // Create the Supabase Auth user via the admin client with email_confirm
+  // true, so registration never depends on the project's "Confirm email"
+  // dashboard setting — preserves the existing auto-signed-in-after-register UX.
+  const admin = createAdminClient();
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { name },
   });
+  if (createError || !created.user) {
+    return createError?.message.toLowerCase().includes("already")
+      ? "An account with that email already exists."
+      : "Something went wrong creating your account.";
+  }
 
   try {
-    await signIn("credentials", { email, password, redirectTo: "/dashboard" });
+    await prisma.user.create({
+      data: { id: created.user.id, name, email, avatarSeed: randomAvatarSeed() },
+    });
   } catch (error) {
-    if (error instanceof AuthError) return "Account created — please sign in.";
+    // Roll back the orphaned Supabase Auth user rather than leaving an
+    // account that can sign in but has no app-side profile row.
+    await admin.auth.admin.deleteUser(created.user.id);
     throw error;
   }
+
+  const supabase = await createClient();
+  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+  if (signInError) return "Account created — please sign in.";
+
+  redirect("/dashboard");
 }
 
 export async function logoutAction() {
-  const { signOut } = await import("@/auth");
-  await signOut({ redirectTo: "/" });
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/");
 }

@@ -2,17 +2,19 @@
 // Organisation -> Group -> Project -> Checkpoint hierarchy, plus a
 // deliberately separate Habit system (see section 30 of prd.md).
 //
-// NOTE: SQLite has no native enum support in Prisma, so "enum-like" fields
-// below are plain Strings. Their allowed values are defined as TypeScript
-// union types in src/lib/constants.ts — validate against those before writing.
+// NOTE: "Enum-like" fields below are plain Strings rather than native Postgres
+// enums — kept from the original SQLite schema to avoid an enum migration.
+// Their allowed values are defined as TypeScript union types in
+// src/lib/constants.ts — validate against those before writing.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ---------------------------------------------------------------------------
@@ -20,12 +22,14 @@ datasource db {
 // ---------------------------------------------------------------------------
 
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  avatarSeed   String // drives a random-object avatar, no customisation
-  createdAt    DateTime @default(now())
+  // Matches the id of the corresponding Supabase Auth user (auth.users.id) —
+  // set explicitly wherever a User row is created, never relies on the
+  // default. Credentials live in Supabase Auth, not here.
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  avatarSeed String // drives a random-object avatar, no customisation
+  createdAt  DateTime @default(now())
 
   orgMemberships   OrganisationMembership[]
   groupMemberships GroupMembership[]

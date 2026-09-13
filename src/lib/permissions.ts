@@ -1,5 +1,5 @@
 import "server-only";
-import { auth } from "@/auth";
+import { getSessionUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import type { OrgRole } from "@/lib/constants";
 
@@ -13,9 +13,9 @@ export class AuthError extends Error {}
 export class ForbiddenError extends Error {}
 
 export async function requireUser() {
-  const session = await auth();
-  if (!session?.user?.id) throw new AuthError("Not signed in.");
-  return session.user;
+  const user = await getSessionUser();
+  if (!user) throw new AuthError("Not signed in.");
+  return user;
 }
 
 export async function getMembership(userId: string, organisationId: string) {

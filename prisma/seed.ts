@@ -5,9 +5,15 @@
 // plus a checkpoint bottleneck.
 
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
+import { createClient } from "@supabase/supabase-js";
 
 const prisma = new PrismaClient();
+// Not importing src/lib/supabase/admin.ts here: it has `import "server-only"`,
+// which Next's bundler special-cases but plain `tsx` (this script's runtime)
+// can't resolve — so this seed script builds its own admin client inline.
+const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
 
 const AVATAR_OBJECTS = [
   "🪐", "🧭", "🧊", "🪀", "🔭", "🪁", "🧩", "🪄", "🧬", "🛰️",
@@ -20,32 +26,66 @@ function avatarFor(i: number) {
 
 const DEMO_PASSWORD = "password123";
 
+// `npm run db:reset` runs `prisma db push --force-reset` (drops/recreates
+// only the tables Prisma manages, i.e. the `public` schema) followed by this
+// seed — it never touches Supabase's separate `auth` schema. So on a second
+// run, `prisma.user` is empty but the Supabase Auth users from the previous
+// run still exist. Look one up by email before creating, so re-seeding
+// doesn't fail on "user already registered".
+async function findAuthUserIdByEmail(email: string): Promise<string | null> {
+  const { data, error } = await supabaseAdmin.auth.admin.listUsers();
+  if (error) throw error;
+  return data.users.find((u) => u.email === email)?.id ?? null;
+}
+
+async function ensureUser({ name, email, avatarSeed }: { name: string; email: string; avatarSeed: string }) {
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) return existing;
+
+  let authUserId = await findAuthUserIdByEmail(email);
+  if (!authUserId) {
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: DEMO_PASSWORD,
+      email_confirm: true,
+      user_metadata: { name },
+    });
+    if (error || !data.user) throw error ?? new Error(`Failed to create auth user for ${email}`);
+    authUserId = data.user.id;
+  }
+
+  return prisma.user.create({ data: { id: authUserId, name, email, avatarSeed } });
+}
+
+// `prisma db push --force-reset` (used by `npm run db:reset`) drops and
+// recreates the entire `public` schema, which wipes Supabase's default role
+// grants on it (a known Prisma+Supabase gotcha — Prisma's own connection is
+// unaffected since it connects as the schema owner, but the anon/authenticated/
+// service_role roles PostgREST and the dashboard use lose access). Restore
+// them every run so a reset never needs a manual fix-up afterwards.
+async function restoreSupabaseGrants() {
+  const roles = "postgres, anon, authenticated, service_role";
+  const statements = [
+    `grant usage on schema public to ${roles}`,
+    `grant all on all tables in schema public to ${roles}`,
+    `grant all on all sequences in schema public to ${roles}`,
+    `grant all on all functions in schema public to ${roles}`,
+    `alter default privileges in schema public grant all on tables to ${roles}`,
+    `alter default privileges in schema public grant all on sequences to ${roles}`,
+    `alter default privileges in schema public grant all on functions to ${roles}`,
+  ];
+  for (const statement of statements) {
+    await prisma.$executeRawUnsafe(statement);
+  }
+}
+
 async function main() {
   console.log("Seeding Avance demo data…");
-  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+  await restoreSupabaseGrants();
 
   // --- Users --------------------------------------------------------------
-  const head = await prisma.user.upsert({
-    where: { email: "head@avance.dev" },
-    update: {},
-    create: {
-      name: "Ravi Kumar",
-      email: "head@avance.dev",
-      passwordHash,
-      avatarSeed: avatarFor(0),
-    },
-  });
-
-  const host = await prisma.user.upsert({
-    where: { email: "host@avance.dev" },
-    update: {},
-    create: {
-      name: "Dr. Meera Nair",
-      email: "host@avance.dev",
-      passwordHash,
-      avatarSeed: avatarFor(1),
-    },
-  });
+  const head = await ensureUser({ name: "Ravi Kumar", email: "head@avance.dev", avatarSeed: avatarFor(0) });
+  const host = await ensureUser({ name: "Dr. Meera Nair", email: "host@avance.dev", avatarSeed: avatarFor(1) });
 
   const studentNames = [
     "Ani", "Rahul", "Priya", "Arjun", "Sneha", "Vikram",
@@ -54,16 +94,7 @@ async function main() {
   const students = [];
   for (let i = 0; i < studentNames.length; i++) {
     const email = `student${i + 1}@avance.dev`;
-    const student = await prisma.user.upsert({
-      where: { email },
-      update: {},
-      create: {
-        name: studentNames[i],
-        email,
-        passwordHash,
-        avatarSeed: avatarFor(i + 2),
-      },
-    });
+    const student = await ensureUser({ name: studentNames[i], email, avatarSeed: avatarFor(i + 2) });
     students.push(student);
   }
 

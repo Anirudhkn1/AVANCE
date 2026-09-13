@@ -1,13 +1,10 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { createOrganisationAction, joinOrganisationAction } from "@/actions/organisations";
-import { DesktopIconButton } from "@/components/desktop-icon";
-import { SubmitForm } from "@/components/forms";
+import type { ReactNode } from "react";
 
-type Mode = "join" | "create" | null;
-
-function Modal({
+/** Small centered dialog used by the dashboard's bento sections (e.g. the
+ *  Join/Create organisation actions) to wrap a form without leaving the page. */
+export function Modal({
   title,
   subtitle,
   onClose,
@@ -46,57 +43,5 @@ function Modal({
         {children}
       </div>
     </div>
-  );
-}
-
-/** Front-facing Join/Create organisation icons — these are desktop tiles, not
- *  content buried inside another page. Each opens a small modal wrapping the
- *  existing server actions. */
-export function OrgQuickActions() {
-  const [mode, setMode] = useState<Mode>(null);
-
-  return (
-    <>
-      <DesktopIconButton
-        onClick={() => setMode("join")}
-        icon="🔑"
-        label="Join Organisation"
-        glyphClassName="bg-success-soft"
-      />
-      <DesktopIconButton
-        onClick={() => setMode("create")}
-        icon="🏗️"
-        label="Create Organisation"
-        glyphClassName="bg-warning-soft"
-      />
-
-      {mode === "join" && (
-        <Modal title="Join with a code" subtitle="Get this from your organisation head or host." onClose={() => setMode(null)}>
-          <SubmitForm action={joinOrganisationAction} submitLabel="Join organisation">
-            <input
-              name="code"
-              placeholder="e.g. CSEA-2025"
-              required
-              autoFocus
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent uppercase"
-            />
-          </SubmitForm>
-        </Modal>
-      )}
-
-      {mode === "create" && (
-        <Modal title="Create an organisation" subtitle="You'll become its Organisation Head." onClose={() => setMode(null)}>
-          <SubmitForm action={createOrganisationAction} submitLabel="Create organisation">
-            <input
-              name="name"
-              placeholder="e.g. CSE-A"
-              required
-              autoFocus
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent"
-            />
-          </SubmitForm>
-        </Modal>
-      )}
-    </>
   );
 }

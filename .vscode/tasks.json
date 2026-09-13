@@ -2,10 +2,39 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "kill-stale-dev-server",
+            "type": "process",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue | Select-Object -Expand OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }; exit 0"
+            ],
+            // Next.js 16 locks .next/dev/lock for as long as `next dev` is running and
+            // refuses to start a second server while it's held (the lock file itself is
+            // opened exclusively, so it can't be read to identify the PID from outside).
+            // VS Code does not kill the background "dev" task when a debug session is
+            // stopped, so a previous F5 run's server is left holding the lock — the next
+            // F5 then fails outright with "Another next dev server is already running."
+            // This task force-kills whatever process is still listening on port 3000
+            // (a no-op if nothing is running), which releases that lock, so both the
+            // pre-launch chain below and the postDebugTask in launch.json always leave
+            // port 3000 free for the next run.
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "dev",
             "type": "npm",
             "script": "dev",
             "isBackground": true,
+            "dependsOn": ["kill-stale-dev-server"],
+            "dependsOrder": "sequence",
             "problemMatcher": {
                 "owner": "custom",
                 "pattern": {

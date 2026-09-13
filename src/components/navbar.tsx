@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { logoutAction } from "@/actions/auth";
 import { Avatar } from "@/components/ui";
+import GooeyNav from "@/components/GooeyNav";
 
 // Organisations/Habits/To-Do/Focus are reached via icons on the /dashboard
 // desktop itself — the nav stays a short list of what isn't an icon there.
@@ -24,17 +25,9 @@ export function Navbar({
           Avance
         </Link>
         {user && (
-          <nav className="hidden md:flex items-center gap-1 text-sm">
-            {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="px-3 py-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface-muted transition-colors"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <div className="hidden md:block">
+            <GooeyNav items={NAV_ITEMS} />
+          </div>
         )}
         <div className="ml-auto flex items-center gap-3">
           {user ? (

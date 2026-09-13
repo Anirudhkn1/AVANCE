@@ -2,7 +2,7 @@
 
 // Verbatim from React Bits (DavidHDev/react-bits, Backgrounds/PixelBlast),
 // JS+CSS variant — only the "use client" directive above was added for
-// Next.js App Router compatibility. See dashboard-background.tsx for the
+// Next.js App Router compatibility. See app-background.tsx for the
 // app-specific wrapper (error containment, brand color).
 import { Effect, EffectComposer, EffectPass, RenderPass } from 'postprocessing';
 import { useEffect, useRef } from 'react';

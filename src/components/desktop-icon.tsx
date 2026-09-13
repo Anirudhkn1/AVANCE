@@ -77,13 +77,13 @@ const ORG_TONES = [
   "bg-danger-soft text-danger",
 ];
 
-function orgTone(name: string) {
+export function orgTone(name: string) {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
   return ORG_TONES[hash % ORG_TONES.length];
 }
 
-const ROLE_LABEL: Record<OrgRole, string> = { HEAD: "Head", HOST: "Host", STUDENT: "Student" };
+export const ROLE_LABEL: Record<OrgRole, string> = { HEAD: "Head", HOST: "Host", STUDENT: "Student" };
 
 export function OrgDesktopIcon({ orgId, name, role }: { orgId: string; name: string; role: OrgRole }) {
   const initial = name.trim().charAt(0).toUpperCase() || "?";

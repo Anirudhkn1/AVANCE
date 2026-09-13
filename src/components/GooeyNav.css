@@ -1,0 +1,105 @@
+/*
+ * Rebuilt from scratch — this originally vendored React Bits' GooeyNav
+ * (DavidHDev/react-bits, Components/GooeyNav), which merges an active pill
+ * with click particles into one shape via mix-blend-mode + blur/contrast
+ * over a black backdrop. That trick needed a real bug-fix once already
+ * (it was bleeding a dark smear past the header without `isolation`/
+ * `overflow: hidden`) and, per feedback, was still rendering with the
+ * demo's multi-hue particle palette. Rather than keep patching a fragile
+ * compositing trick, this is a plain sliding-pill indicator plus a CSS
+ * particle burst — no blend modes, no contrast filters, nothing that can
+ * paint outside this component. Every color reference below is
+ * `var(--accent)` (or an alpha of it) — nothing else appears anywhere.
+ */
+
+.gooey-nav-container {
+  position: relative;
+}
+
+.gooey-nav-container ul {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.gooey-nav-container li {
+  position: relative;
+}
+
+.gooey-nav-container li a {
+  display: inline-block;
+  padding: 0.4em 0.9em;
+  font-size: 0.875rem;
+  color: var(--muted);
+  text-decoration: none;
+  border-radius: 100vw;
+  transition: color 0.25s ease;
+}
+
+.gooey-nav-container li a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.gooey-nav-container li.active a {
+  color: var(--accent-foreground);
+}
+
+.gooey-nav-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  border-radius: 100vw;
+  background: var(--accent);
+  transition:
+    transform 0.35s cubic-bezier(0.65, 0, 0.35, 1),
+    width 0.35s cubic-bezier(0.65, 0, 0.35, 1),
+    height 0.35s cubic-bezier(0.65, 0, 0.35, 1);
+  pointer-events: none;
+}
+
+.gooey-nav-burst {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.gooey-nav-burst__dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--dot-size, 6px);
+  height: var(--dot-size, 6px);
+  margin: calc(var(--dot-size, 6px) / -2);
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: var(--dot-opacity, 0.8);
+  animation: gooey-nav-burst-dot var(--dot-time, 500ms) cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes gooey-nav-burst-dot {
+  from {
+    transform: translate(0, 0) scale(1);
+    opacity: var(--dot-opacity, 0.8);
+  }
+  to {
+    transform: translate(var(--dot-x, 0), var(--dot-y, 0)) scale(0);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gooey-nav-pill {
+    transition: none;
+  }
+  .gooey-nav-burst__dot {
+    animation: none;
+    display: none;
+  }
+}

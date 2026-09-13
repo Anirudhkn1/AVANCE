@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getSessionUser } from "@/lib/session";
 import { Card, ProgressBar, Badge } from "@/components/ui";
 import { AeroShardsBackground } from "@/components/aero-shards-background";
+import ParticleText from "@/components/ParticleText";
 
 export default async function LandingPage() {
   const user = await getSessionUser();
@@ -14,7 +15,18 @@ export default async function LandingPage() {
           dark panel regardless of light/dark mode. */}
       <section className="relative isolate overflow-hidden">
         <AeroShardsBackground backgroundColor="#0a0b10" shardColor="#8b85ff" accentColor="#5850ec" />
-        <div className="relative z-10 mx-auto max-w-5xl px-4 pt-20 pb-16 text-center">
+        <div className="relative z-10 mx-auto max-w-5xl px-4 pt-16 pb-16 text-center">
+          <div className="h-40 sm:h-56 -mb-2">
+            <ParticleText
+              text="Avance"
+              color="#ffffff"
+              highlightColor="#8b85ff"
+              trigger="hover"
+              glow
+              className=""
+              style={undefined}
+            />
+          </div>
           <Badge tone="accent" className="mb-5">A game layer for real-world work</Badge>
           <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight leading-[1.1] text-white">
             Avance turns assignments into
