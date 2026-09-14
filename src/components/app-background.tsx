@@ -66,6 +66,9 @@ export function AppBackground() {
           speed={0.6}
           edgeFade={0.1}
           transparent
+          // MSAA is a real per-frame GPU cost that buys nothing at 2.5%
+          // opacity — nobody can see the jaggies it would otherwise smooth.
+          antialias={false}
         />
       </BackgroundErrorBoundary>
     </div>

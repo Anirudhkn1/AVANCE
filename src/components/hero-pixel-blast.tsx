@@ -55,6 +55,9 @@ export function HeroPixelBlast() {
           speed={0.6}
           edgeFade={0.1}
           transparent
+          // MSAA is a real per-frame GPU cost that buys nothing at 1.2%
+          // opacity — nobody can see the jaggies it would otherwise smooth.
+          antialias={false}
         />
       </HeroPixelBlastErrorBoundary>
     </div>

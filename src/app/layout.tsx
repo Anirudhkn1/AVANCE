@@ -115,7 +115,21 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Suspense fallback={<NavbarFallback />}>
           <AppChrome />
         </Suspense>
-        <SplashCursor RAINBOW_MODE={false} COLOR="#5850ec" />
+        {/* Default settings are React Bits' full-quality preset — a 1440px
+            dye texture + 20 pressure-solve passes, every frame, forever,
+            sitewide (mounted here in the root layout, not per-page). That's
+            real, continuous GPU/main-thread cost regardless of the opacity
+            dialed on top of it (opacity is a compositing step, not a
+            render-cost one) — a likely contributor to "everything feels
+            laggy". Cut to a lighter tier: still the same fluid-trail look,
+            just computed at a lower resolution/iteration count. */}
+        <SplashCursor
+          RAINBOW_MODE={false}
+          COLOR="#5850ec"
+          SIM_RESOLUTION={96}
+          DYE_RESOLUTION={720}
+          PRESSURE_ITERATIONS={12}
+        />
         <div className="flex flex-1 flex-col">{children}</div>
       </body>
     </html>
