@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getSessionUser } from "@/lib/session";
 import { Card, ProgressBar, Badge } from "@/components/ui";
 import { AeroShardsBackground } from "@/components/aero-shards-background";
+import { HeroPixelBlast } from "@/components/hero-pixel-blast";
 import ParticleText from "@/components/ParticleText";
 
 export default async function LandingPage() {
@@ -12,9 +13,12 @@ export default async function LandingPage() {
       {/* Hero — AeroShards renders a WebGPU background panel behind this
           section only, so the rest of the page stays the plain theme
           background; hero text is forced light since it sits on a fixed
-          dark panel regardless of light/dark mode. */}
+          dark panel regardless of light/dark mode. HeroPixelBlast is a
+          second, much fainter layer on top of it (transparent canvas) —
+          pure texture, not a replacement for AeroShards. */}
       <section className="relative isolate overflow-hidden">
         <AeroShardsBackground backgroundColor="#0a0b10" shardColor="#8b85ff" accentColor="#5850ec" />
+        <HeroPixelBlast />
         <div className="relative z-10 mx-auto max-w-5xl px-4 pt-16 pb-16 text-center">
           <div className="h-40 sm:h-56 -mb-2">
             <ParticleText

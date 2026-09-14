@@ -5,7 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { randomAvatarSeed } from "@/lib/avatar";
+import { randomAvatarValue } from "@/lib/avatar";
 
 export async function loginAction(_prevState: string | undefined, formData: FormData): Promise<string | undefined> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
@@ -57,7 +57,7 @@ export async function registerAction(_prevState: string | undefined, formData: F
 
   try {
     await prisma.user.create({
-      data: { id: created.user.id, name, email, avatarSeed: randomAvatarSeed() },
+      data: { id: created.user.id, name, email, avatarSeed: randomAvatarValue() },
     });
   } catch (error) {
     // Roll back the orphaned Supabase Auth user rather than leaving an

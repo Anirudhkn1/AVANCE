@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import {
   Geist,
   Bricolage_Grotesque,
@@ -11,7 +12,7 @@ import {
 import "./globals.css";
 import { getSessionUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { Navbar } from "@/components/navbar";
+import { Navbar, NavbarFallback } from "@/components/navbar";
 import SplashCursor from "@/components/SplashCursor";
 import { AppBackground } from "@/components/app-background";
 
@@ -78,21 +79,43 @@ export const metadata: Metadata = {
     "Avance turns real-world assignments into measurable quests and gives institutions visibility before failure happens.",
 };
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
+// Session check + unread count are both per-request, uncached round trips
+// (see the comment on getSessionUser — it revalidates against Supabase's
+// Auth server, not just the cookie). Previously these were awaited directly
+// in RootLayout, which — since loading.tsx only wraps `page.js` and nested
+// layouts, never the layout that defines it — meant every single navigation
+// sat blocked on this network round trip with nothing on screen, before any
+// loading UI (this app's own, or the target page's) got a chance to render.
+// Isolating them in their own async component and wrapping *that* in
+// Suspense lets the <html>/<body> shell — and the route's loading.tsx —
+// stream immediately; this chrome fills in a moment later without holding
+// up the rest of the page. See node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/loading.md
+// ("Good to know" / Navigation section).
+async function AppChrome() {
   const user = await getSessionUser();
   const unreadCount = user
     ? await prisma.notification.count({ where: { userId: user.id, read: false } })
     : 0;
 
   return (
+    <>
+      {user && <AppBackground />}
+      <Navbar user={user} unreadCount={unreadCount} />
+    </>
+  );
+}
+
+export default function RootLayout({ children }: LayoutProps<"/">) {
+  return (
     <html
       lang="en"
       className={`${geistSans.variable} ${bricolageGrotesque.variable} ${spaceMono.variable} ${specialElite.variable} ${courierPrime.variable} ${cutiveMono.variable} ${vt323.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {user && <AppBackground />}
+        <Suspense fallback={<NavbarFallback />}>
+          <AppChrome />
+        </Suspense>
         <SplashCursor RAINBOW_MODE={false} COLOR="#5850ec" />
-        <Navbar user={user} unreadCount={unreadCount} />
         <div className="flex flex-1 flex-col">{children}</div>
       </body>
     </html>

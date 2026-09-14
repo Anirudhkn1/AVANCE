@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireSessionUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { Card, SectionHeading, StatTile, Badge, Avatar, EmptyState } from "@/components/ui";
@@ -10,34 +11,39 @@ export default async function ProfilePage() {
     include: { organisation: true },
   });
 
+  // The 3 queries below are independent of each other — only the 3 awaits
+  // *within* one membership were ever sequential (Promise.all across
+  // memberships already parallelized the outer loop). Firing all 3 at once
+  // per membership turns each row's cost into 1 round trip instead of 3,
+  // which matters here since this page is reached from the navbar on every
+  // page load.
   const rows = await Promise.all(
     memberships.map(async (m) => {
-      const completedCheckpoints = await prisma.checkpointProgress.count({
-        where: { userId: user.id, completed: true, checkpoint: { project: { group: { organisationId: m.organisationId } } } },
-      });
-      let rank: number | null = null;
-      if (m.role === "STUDENT") {
-        const higherCount = await prisma.organisationMembership.count({
-          where: { organisationId: m.organisationId, role: "STUDENT", xp: { gt: m.xp } },
-        });
-        rank = higherCount + 1;
-      }
-      const totalStudents = await prisma.organisationMembership.count({
-        where: { organisationId: m.organisationId, role: "STUDENT" },
-      });
+      const [completedCheckpoints, higherCount, totalStudents] = await Promise.all([
+        prisma.checkpointProgress.count({
+          where: { userId: user.id, completed: true, checkpoint: { project: { group: { organisationId: m.organisationId } } } },
+        }),
+        m.role === "STUDENT"
+          ? prisma.organisationMembership.count({
+              where: { organisationId: m.organisationId, role: "STUDENT", xp: { gt: m.xp } },
+            })
+          : Promise.resolve(null),
+        prisma.organisationMembership.count({
+          where: { organisationId: m.organisationId, role: "STUDENT" },
+        }),
+      ]);
+      const rank = higherCount === null ? null : higherCount + 1;
       return { membership: m, completedCheckpoints, rank, totalStudents };
     })
   );
 
-  // XP/streak are student concepts — a Host/Head's own membership row always
-  // sits at 0 for both, so it's excluded here rather than shown as if it meant
-  // something.
+  // XP is a student concept — a Host/Head's own membership row always sits
+  // at 0, so it's excluded here rather than shown as if it meant something.
   const studentMemberships = memberships.filter((m) => m.role === "STUDENT");
   const totalXp = studentMemberships.reduce((s, m) => s + m.xp, 0);
   const totalCompleted = rows
     .filter((r) => r.membership.role === "STUDENT")
     .reduce((s, r) => s + r.completedCheckpoints, 0);
-  const longestStreak = studentMemberships.reduce((s, m) => Math.max(s, m.streakLongest), 0);
 
   return (
     <div className="mx-auto max-w-3xl w-full px-4 py-8 space-y-8">
@@ -46,13 +52,15 @@ export default async function ProfilePage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{user.name}</h1>
           <p className="text-sm text-muted">{user.email}</p>
+          <Link href="/profile/avatar" className="text-sm text-accent hover:underline mt-1 inline-block">
+            Change avatar
+          </Link>
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-4">
+      <div className="grid sm:grid-cols-2 gap-4">
         <StatTile label="Total XP" value={totalXp} />
         <StatTile label="Checkpoints completed" value={totalCompleted} />
-        <StatTile label="Longest streak" value={`🔥 ${longestStreak}`} />
       </div>
 
       <div>
@@ -77,15 +85,14 @@ export default async function ProfilePage() {
                   </div>
                 </div>
                 {m.role === "STUDENT" ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-sm">
+                  <div className="grid grid-cols-3 gap-3 mt-4 text-sm">
                     <div><p className="text-muted">XP</p><p className="font-medium">{m.xp}</p></div>
                     <div><p className="text-muted">Checkpoints</p><p className="font-medium">{completedCheckpoints}</p></div>
-                    <div><p className="text-muted">Streak</p><p className="font-medium">🔥 {m.streakCurrent}</p></div>
                     <div><p className="text-muted">Fair Play</p><p className="font-medium">{m.fairPlayScore}</p></div>
                   </div>
                 ) : (
                   <p className="text-sm text-muted mt-3">
-                    {m.role === "HEAD" ? "Manages this organisation." : "Manages groups and projects in this organisation."} XP and streaks are student-only.
+                    {m.role === "HEAD" ? "Manages this organisation." : "Manages groups and projects in this organisation."} XP is student-only.
                   </p>
                 )}
               </Card>
