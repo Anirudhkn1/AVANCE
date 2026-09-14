@@ -1110,6 +1110,10 @@ function SplashCursor({
         pointerEvents: "none",
         width: "100%",
         height: "100%",
+        // 40% dimmer on request — plain CSS opacity on the wrapper rather
+        // than touching the fluid-sim's own color/force constants, so the
+        // splash shapes/behavior are unchanged, just fainter.
+        opacity: 0.6,
       }}
     >
       <canvas
