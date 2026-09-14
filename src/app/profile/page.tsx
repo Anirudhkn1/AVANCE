@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireSessionUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { Card, SectionHeading, StatTile, Badge, Avatar, EmptyState } from "@/components/ui";
@@ -51,6 +52,9 @@ export default async function ProfilePage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{user.name}</h1>
           <p className="text-sm text-muted">{user.email}</p>
+          <Link href="/profile/avatar" className="text-sm text-accent hover:underline mt-1 inline-block">
+            Change avatar
+          </Link>
         </div>
       </div>
 

@@ -6,6 +6,7 @@
 
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
+import { AVATAR_STYLES, avatarValue } from "../src/lib/avatar";
 
 const prisma = new PrismaClient();
 // Not importing src/lib/supabase/admin.ts here: it has `import "server-only"`,
@@ -15,13 +16,11 @@ const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, proces
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-const AVATAR_OBJECTS = [
-  "🪐", "🧭", "🧊", "🪀", "🔭", "🪁", "🧩", "🪄", "🧬", "🛰️",
-  "🪛", "🧯", "🪃", "🧱", "🪆", "🧿", "🪤", "🧰", "🪑", "🧶",
-];
-
+// Deterministic so re-seeding gives every demo user the same look. Cycles
+// through AVATAR_STYLES (currently just one) rather than hard-coding a name,
+// so this doesn't need editing if another style is ever added back.
 function avatarFor(i: number) {
-  return AVATAR_OBJECTS[i % AVATAR_OBJECTS.length];
+  return avatarValue(AVATAR_STYLES[i % AVATAR_STYLES.length], `demo-${i}`);
 }
 
 const DEMO_PASSWORD = "password123";

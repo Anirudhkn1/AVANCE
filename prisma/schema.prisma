@@ -28,7 +28,7 @@ model User {
   id         String   @id @default(cuid())
   name       String
   email      String   @unique
-  avatarSeed String // drives a random-object avatar, no customisation
+  avatarSeed String // "<style>|<seed>" driving a user-picked illustrated avatar — see src/lib/avatar.ts
   createdAt  DateTime @default(now())
 
   orgMemberships   OrganisationMembership[]

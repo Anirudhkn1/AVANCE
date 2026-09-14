@@ -3,6 +3,8 @@ import Link from "next/link";
 import type { RiskLevel } from "@/lib/constants";
 import { riskEmoji, riskLabel } from "@/lib/risk";
 
+export { Avatar } from "@/components/avatar";
+
 export function Card({
   children,
   className = "",
@@ -216,14 +218,3 @@ export function PageLoader() {
   );
 }
 
-export function Avatar({ seed, size = "md" }: { seed: string; size?: "sm" | "md" | "lg" }) {
-  const sizes = { sm: "h-6 w-6 text-sm", md: "h-9 w-9 text-lg", lg: "h-14 w-14 text-3xl" };
-  return (
-    <div
-      className={`flex items-center justify-center rounded-full bg-accent-soft ${sizes[size]}`}
-      aria-hidden
-    >
-      {seed}
-    </div>
-  );
-}
