@@ -78,9 +78,8 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-4 gap-4">
+      <div className="grid sm:grid-cols-3 gap-4">
         <StatTile label="XP" value={membership.xp} />
-        <StatTile label="Streak" value={`🔥 ${membership.streakCurrent}`} />
         <StatTile label="Fair Play" value={membership.fairPlayScore} />
         <StatTile
           label="Last active"

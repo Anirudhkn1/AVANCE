@@ -193,6 +193,29 @@ export function EmptyState({
   );
 }
 
+// Fallback UI for route navigation (src/app/loading.tsx and any nested
+// loading.tsx). Centered in whatever Suspense boundary swaps it in, so it
+// reads as "the middle of the screen" whichever page is loading — instant,
+// visible feedback that a click registered while the next page streams in.
+export function PageLoader() {
+  return (
+    <div
+      className="flex flex-1 min-h-[60vh] w-full items-center justify-center"
+      role="status"
+      aria-label="Loading"
+    >
+      <div className="flex flex-col items-center gap-3">
+        <span className="relative flex h-12 w-12 items-center justify-center">
+          <span className="absolute inset-0 rounded-full border-2 border-accent-soft" />
+          <span className="absolute inset-0 rounded-full border-2 border-transparent border-t-accent animate-loader-spin" />
+          <span className="h-2.5 w-2.5 rounded-full bg-accent animate-loader-pulse" />
+        </span>
+        <span className="text-sm text-muted">Loading…</span>
+      </div>
+    </div>
+  );
+}
+
 export function Avatar({ seed, size = "md" }: { seed: string; size?: "sm" | "md" | "lg" }) {
   const sizes = { sm: "h-6 w-6 text-sm", md: "h-9 w-9 text-lg", lg: "h-14 w-14 text-3xl" };
   return (

@@ -11,6 +11,21 @@ const NAV_ITEMS = [
   { href: "/profile", label: "Profile" },
 ];
 
+// Shown in the moment before the real Navbar knows who's signed in (see the
+// Suspense boundary around AppChrome in layout.tsx) — same height/border so
+// swapping the two never shifts the page, with a small pulse standing in
+// for the avatar/actions so the header doesn't look frozen while it waits.
+export function NavbarFallback() {
+  return (
+    <header className="border-b border-border bg-surface sticky top-0 z-20">
+      <div className="mx-auto max-w-6xl flex items-center gap-6 px-4 py-3">
+        <span className="font-semibold tracking-tight text-base shrink-0">Avance</span>
+        <div className="ml-auto h-8 w-8 rounded-full bg-surface-muted animate-loader-pulse" />
+      </div>
+    </header>
+  );
+}
+
 export function Navbar({
   user,
   unreadCount = 0,
@@ -19,7 +34,7 @@ export function Navbar({
   unreadCount?: number;
 }) {
   return (
-    <header className="border-b border-border bg-surface/80 backdrop-blur sticky top-0 z-20">
+    <header className="border-b border-border bg-surface sticky top-0 z-20">
       <div className="mx-auto max-w-6xl flex items-center gap-6 px-4 py-3">
         <Link href={user ? "/dashboard" : "/"} className="font-semibold tracking-tight text-base shrink-0">
           Avance

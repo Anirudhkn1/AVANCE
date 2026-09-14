@@ -51,7 +51,6 @@ export default async function LeaderboardPage({
     name: string;
     avatarSeed: string;
     xp: number;
-    streak: number;
     completedCount: number;
     total: number;
   }[] = [];
@@ -75,7 +74,6 @@ export default async function LeaderboardPage({
           name: m.user.name,
           avatarSeed: m.user.avatarSeed,
           xp: mem.xp,
-          streak: mem.streakCurrent,
           completedCount: getCompletedCount(
             completedByUser.get(m.userId) ?? new Set(),
             project.checkpoints.map((c) => c.id)
@@ -87,7 +85,6 @@ export default async function LeaderboardPage({
   }
 
   const topPerformer = rows[0];
-  const mostConsistent = [...rows].sort((a, b) => b.streak - a.streak)[0];
 
   return (
     <div className="mx-auto max-w-3xl w-full px-4 py-8 space-y-6">
@@ -116,26 +113,15 @@ export default async function LeaderboardPage({
         <Card><EmptyState title="No students yet" /></Card>
       ) : (
         <>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {topPerformer && (
-              <Card className="flex items-center gap-3">
-                <span className="text-2xl">🏆</span>
-                <div>
-                  <p className="text-xs text-muted">Top performer</p>
-                  <p className="font-medium">{topPerformer.name}</p>
-                </div>
-              </Card>
-            )}
-            {mostConsistent && mostConsistent.streak > 0 && (
-              <Card className="flex items-center gap-3">
-                <span className="text-2xl">🔥</span>
-                <div>
-                  <p className="text-xs text-muted">Most consistent</p>
-                  <p className="font-medium">{mostConsistent.name} · {mostConsistent.streak}-streak</p>
-                </div>
-              </Card>
-            )}
-          </div>
+          {topPerformer && (
+            <Card className="flex items-center gap-3">
+              <span className="text-2xl">🏆</span>
+              <div>
+                <p className="text-xs text-muted">Top performer</p>
+                <p className="font-medium">{topPerformer.name}</p>
+              </div>
+            </Card>
+          )}
 
           <Card padded={false}>
             <ul className="divide-y divide-border">

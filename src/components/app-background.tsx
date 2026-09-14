@@ -34,16 +34,21 @@ class BackgroundErrorBoundary extends Component<{ children: ReactNode }, { faile
  * text" (e.g. on the Profile page, or the plain sections below the landing
  * page's Hero) is the pattern legitimately showing through the *gaps*
  * around and between letters — correct stacking, but visually noisy right
- * next to small plain text with no card behind it. `opacity-45` softens the
+ * next to small plain text with no card behind it. `opacity-[0.025]`
+ * (45 -> 25 -> cut a further 90% on request, down to 2.5) softens the
  * "on" cells so that noise recedes instead of visually competing with
- * foreground content, while staying visible in open space. Left with
- * default (non-none) pointer-events so its click ripples still fire in the
- * empty space around cards/icons — content above it in paint order still
- * captures its own clicks first.
+ * foreground content, while staying visible in open space. The *actual*
+ * text-covering bug this was mistaken for was the
+ * sticky Navbar's `bg-surface/80 backdrop-blur` letting this pattern bleed
+ * through as a blurred wash behind the nav links on every page — fixed by
+ * making the navbar's background opaque (see navbar.tsx) instead of tuning
+ * this component further. Left with default (non-none) pointer-events so
+ * its click ripples still fire in the empty space around cards/icons —
+ * content above it in paint order still captures its own clicks first.
  */
 export function AppBackground() {
   return (
-    <div className="fixed inset-0 -z-10 opacity-45" aria-hidden>
+    <div className="fixed inset-0 -z-10 opacity-[0.025]" aria-hidden>
       <BackgroundErrorBoundary>
         <PixelBlast
           className=""

@@ -98,9 +98,9 @@ export default async function HowToUsePage() {
       <Card className="flex items-start gap-3">
         <Badge tone="accent">Good to know</Badge>
         <p className="text-sm text-muted">
-          XP, streaks, rank, and Fair Play only apply to students completing checkpoints inside an
-          organisation — hosts and organisation heads never see personal XP or streak numbers for
-          themselves.
+          XP, rank, and Fair Play only apply to students completing checkpoints inside an
+          organisation — hosts and organisation heads never see a personal XP number for
+          themselves. Streaks are a Habit Tracker thing, not tied to any organisation.
         </p>
       </Card>
     </div>
