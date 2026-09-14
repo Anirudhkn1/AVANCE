@@ -5,6 +5,7 @@ import { computeHabitStreak } from "@/lib/habitStreak";
 import { Card, SectionHeading, Badge, EmptyState, Avatar } from "@/components/ui";
 import { SubmitForm } from "@/components/forms";
 import { HabitToggle, ArchiveHabitButton, ShareHabitForm } from "@/components/habit-controls";
+import { HabitMonthCalendar } from "@/components/habit-month-calendar";
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -83,6 +84,7 @@ export default async function HabitsPage() {
                     </div>
                     <ArchiveHabitButton habitId={h.id} />
                   </div>
+                  <HabitMonthCalendar completionDates={h.completions.map((c) => c.date.toISOString())} />
                 </Card>
               );
             })}
