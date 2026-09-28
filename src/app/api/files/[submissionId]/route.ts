@@ -28,6 +28,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ sub
     return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
 
+  if (!submission.filePath) {
+    return NextResponse.json({ error: "This file was deleted after review to save storage." }, { status: 410 });
+  }
+
   let buffer: Buffer;
   try {
     buffer = await readSubmissionFile(submission.filePath);

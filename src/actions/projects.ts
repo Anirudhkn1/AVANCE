@@ -6,12 +6,36 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser, requireGroupHost } from "@/lib/permissions";
 import { analyseAssignment, type QuestProposal } from "@/lib/questBuilder";
+import { generateQuestWithClaude, AiNotConfiguredError } from "@/lib/aiQuestBuilder";
 import { extractTextFromFile } from "@/lib/extractText";
 import { logAudit } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
 import type { SourceType, VerificationMode } from "@/lib/constants";
 
 const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
+
+/**
+ * Asks the model first; falls back to the rule-based builder if it isn't
+ * configured or fails, telling the host so. Returns null only when the
+ * model failed *and* there's no extracted text for the fallback to use
+ * (e.g. a scanned PDF). The assignment is only held in memory here — it's
+ * never written to disk or the database.
+ */
+async function buildProposal(input: { text: string; pdf?: Buffer }): Promise<QuestProposal | null> {
+  try {
+    return await generateQuestWithClaude(input);
+  } catch (err) {
+    const reason =
+      err instanceof AiNotConfiguredError
+        ? "AI isn't set up on this server (no ANTHROPIC_API_KEY)"
+        : "The AI service couldn't be reached";
+    if (!(err instanceof AiNotConfiguredError)) console.error("AI Quest Builder failed:", err);
+    if (input.text.trim().length < 5) return null;
+    const proposal = analyseAssignment(input.text);
+    proposal.warnings.unshift(`${reason}, so a basic template was used instead. Review the checkpoints carefully.`);
+    return proposal;
+  }
+}
 
 export async function analyzeAssignmentTextAction(
   groupId: string,
@@ -23,14 +47,15 @@ export async function analyzeAssignmentTextAction(
   if (!text || text.trim().length === 0) {
     return { ok: false, error: "Paste or upload an assignment first." };
   }
-  const proposal = analyseAssignment(text);
+  const proposal = await buildProposal({ text });
+  if (!proposal) return { ok: false, error: "That assignment is too short to analyse. Add more detail." };
   return { ok: true, proposal, sourceType: "TEXT" };
 }
 
 export async function analyzeAssignmentFileAction(
   groupId: string,
   formData: FormData
-): Promise<{ ok: true; proposal: QuestProposal; sourceType: SourceType; extractedText: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; proposal: QuestProposal; sourceType: SourceType } | { ok: false; error: string }> {
   const user = await requireUser();
   await requireGroupHost(user.id, groupId);
 
@@ -46,21 +71,27 @@ export async function analyzeAssignmentFileAction(
     return { ok: false, error: "Only PDF, DOCX or TXT files are supported." };
   }
 
-  let text: string;
+  const isPdf = lower.endsWith(".pdf");
+  const buffer = Buffer.from(await file.arrayBuffer());
+  let text = "";
   try {
-    const buffer = Buffer.from(await file.arrayBuffer());
     text = await extractTextFromFile(buffer, file.name);
   } catch {
-    return { ok: false, error: "Could not read that file. Try pasting the assignment text instead." };
+    // A PDF can still be read by the model directly, so only give up on
+    // other formats here.
+    if (!isPdf) return { ok: false, error: "Could not read that file. Try pasting the assignment text instead." };
   }
 
-  if (!text || text.trim().length < 5) {
+  if (!isPdf && text.trim().length < 5) {
     return { ok: false, error: "No readable text was found in that file. Try pasting the assignment text instead." };
   }
 
-  const proposal = analyseAssignment(text);
-  const sourceType: SourceType = lower.endsWith(".pdf") ? "PDF" : lower.endsWith(".docx") ? "DOCX" : "TEXT";
-  return { ok: true, proposal, sourceType, extractedText: text };
+  const proposal = await buildProposal({ text, pdf: isPdf ? buffer : undefined });
+  if (!proposal) {
+    return { ok: false, error: "No readable text was found in that file. Try pasting the assignment text instead." };
+  }
+  const sourceType: SourceType = isPdf ? "PDF" : lower.endsWith(".docx") ? "DOCX" : "TEXT";
+  return { ok: true, proposal, sourceType };
 }
 
 const checkpointInput = z.object({
@@ -79,7 +110,6 @@ const publishSchema = z.object({
   verificationMode: z.enum(["AUTO", "HOST_APPROVAL"]),
   aiGenerated: z.boolean(),
   sourceType: z.enum(["PDF", "DOCX", "TEXT", "MANUAL"]),
-  sourceExcerpt: z.string().max(4000).default(""),
   checkpoints: z.array(checkpointInput).min(1, "Add at least one checkpoint.").max(30),
 });
 
@@ -113,7 +143,6 @@ export async function publishProjectAction(
         verificationMode: data.verificationMode as VerificationMode,
         aiGenerated: data.aiGenerated,
         sourceType: data.sourceType as SourceType,
-        sourceExcerpt: data.sourceExcerpt.slice(0, 4000),
         createdById: user.id,
         publishedAt: now,
       },

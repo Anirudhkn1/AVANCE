@@ -6,7 +6,7 @@ import { requireMembership, canManageGroups, isGroupMember } from "@/lib/permiss
 import { getCompletedCount } from "@/lib/progress";
 import { computeRisk } from "@/lib/risk";
 import { getProjectAnalytics } from "@/lib/analytics";
-import { sweepExpiredProjects } from "@/lib/retention";
+import { sweepExpiredProjects, purgeReviewedUploads } from "@/lib/retention";
 import { formatTimeRemaining } from "@/lib/format";
 import { Card, SectionHeading, Badge, EmptyState, LinkButton, Avatar } from "@/components/ui";
 import { JoinGroupButton } from "@/components/join-group-button";
@@ -28,6 +28,8 @@ export default async function GroupPage({ params }: { params: Promise<{ orgId: s
   await sweepExpiredProjects(groupId);
 
   if (isHost) {
+    await purgeReviewedUploads();
+
     const projects = await prisma.project.findMany({
       where: { groupId },
       orderBy: { createdAt: "desc" },

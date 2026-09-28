@@ -82,7 +82,7 @@ export default async function CheckpointPage({
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {submission && (
+                    {submission?.filePath && (
                       <a href={`/api/files/${submission.id}`} target="_blank" rel="noreferrer" className="text-xs text-accent hover:underline">
                         View PDF
                       </a>
@@ -150,9 +150,9 @@ export default async function CheckpointPage({
         <Card>
           <p className="text-sm">✅ You completed this checkpoint.</p>
           {latest?.status === "APPROVED" && (
-            <a href={`/api/files/${latest.id}`} target="_blank" rel="noreferrer" className="text-sm text-accent hover:underline mt-2 inline-block">
-              View your submission →
-            </a>
+            <p className="text-xs text-muted mt-2">
+              Submitted {latest.fileName}. Files are deleted once approved to save storage.
+            </p>
           )}
         </Card>
       )}

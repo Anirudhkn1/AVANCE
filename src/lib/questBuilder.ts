@@ -1,11 +1,10 @@
 /**
- * Rule-based, reliable AI Quest Builder (PRD §11-12, §39-40).
+ * Rule-based Quest Builder fallback (PRD §11-12, §39-40).
  *
- * This is a deterministic, rule-based analyser — no external AI API call.
- * It is the documented fallback the PRD requires regardless of AI
- * availability ("If the AI API is unavailable, normal functionality must
- * continue"), and for this build it is the *only* engine, wired behind the
- * same seam a real model call would use later (see `analyseAssignment`).
+ * A deterministic analyser with no external API call. The primary engine is
+ * the model-backed one in aiQuestBuilder.ts; this is the documented fallback
+ * the PRD requires ("If the AI API is unavailable, normal functionality must
+ * continue").
  *
  * It NEVER auto-publishes: callers must always route the result through a
  * host-editable preview and an explicit approve/publish step.
@@ -15,6 +14,7 @@ export interface ProposedCheckpoint {
   title: string;
   description: string;
   submissionRequired: boolean;
+  xpValue?: number; // weighted by effort when the model proposes it; the wizard defaults to 10
   source: "extracted" | "suggested";
 }
 

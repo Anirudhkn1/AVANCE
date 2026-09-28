@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser, requireMembership, isGroupMember, requireGroupHost } from "@/lib/permissions";
 import { saveSubmissionFile } from "@/lib/storage";
+import { releaseSubmissionFile } from "@/lib/retention";
 import { awardCheckpointCompletion } from "@/lib/gamification";
 import { logAudit } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
@@ -65,17 +66,24 @@ export async function submitCheckpointAction(
     return { ok: false, error: "Only PDF files are accepted." };
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const { relativePath } = await saveSubmissionFile({
-    organisationId,
-    checkpointId,
-    userId: user.id,
-    fileName: file.name,
-    buffer,
-  });
-
   const attempt = (latest?.attempt ?? 0) + 1;
   const auto = project.verificationMode === "AUTO";
+
+  // Files are only kept until they're reviewed. AUTO submissions are
+  // approved the moment they arrive, so there's nothing to keep them for —
+  // they're validated above and never written to disk. An empty filePath
+  // means "no file stored".
+  let relativePath = "";
+  if (!auto) {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    ({ relativePath } = await saveSubmissionFile({
+      organisationId,
+      checkpointId,
+      userId: user.id,
+      fileName: file.name,
+      buffer,
+    }));
+  }
 
   await prisma.$transaction(async (tx) => {
     await tx.checkpointSubmission.create({
@@ -220,6 +228,13 @@ export async function reviewSubmissionAction(
       });
     }
   });
+
+  // Once reviewed, the PDF has served its purpose (a rejected student
+  // uploads a fresh attempt). If the delete fails the row keeps its
+  // filePath, so purgeReviewedUploads() retries it later.
+  await releaseSubmissionFile(submission).catch((err) =>
+    console.error(`Could not delete reviewed submission file ${submission.filePath}:`, err)
+  );
 
   await logAudit({
     actorId: user.id,
