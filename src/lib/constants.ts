@@ -27,6 +27,14 @@ export type ActivityType = (typeof ACTIVITY_TYPES)[number];
 export const HABIT_FREQUENCIES = ["DAILY", "WEEKLY"] as const;
 export type HabitFrequency = (typeof HABIT_FREQUENCIES)[number];
 
+// SM-2 review grades, worst to best.
+export const CARD_GRADES = ["AGAIN", "HARD", "GOOD", "EASY"] as const;
+export type CardGrade = (typeof CARD_GRADES)[number];
+
+// Not a storage limit (text is cheap) — a review-queue sanity cap so a deck
+// never grows past what's realistically reviewable.
+export const MAX_CARDS_PER_USER = 5000;
+
 export const NOTIFICATION_TYPES = [
   "DEADLINE_REMINDER",
   "PROGRESS_REMINDER",

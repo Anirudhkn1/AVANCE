@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 import { loginAction } from "@/actions/auth";
 import { Button } from "@/components/ui";
 import { PasswordField } from "@/components/password-field";
@@ -20,8 +21,8 @@ export default function LoginPage() {
       <div className="flex flex-col sm:flex-row items-center sm:items-start justify-center gap-6">
         <div className="w-full max-w-sm order-2 sm:order-1">
           <div className="mb-8 text-center">
-            <Link href="/" className="text-xl font-semibold tracking-tight">
-              Avance
+            <Link href="/" aria-label="Avance home">
+              <Logo className="text-2xl" markClassName="h-8 w-8" />
             </Link>
             <p className="text-sm text-muted mt-1">Sign in to continue your quest.</p>
           </div>
@@ -66,9 +67,9 @@ export default function LoginPage() {
           </p>
           <div className="mt-6 rounded-xl border border-border bg-surface-muted p-3 text-xs text-muted">
             <p className="font-medium text-foreground mb-1">Demo accounts</p>
-            <p>Host: host@avance.dev</p>
-            <p>Student: student1@avance.dev</p>
-            <p>Password (all): password123</p>
+            <p>Host: <span className="font-typed">host@avance.dev</span></p>
+            <p>Student: <span className="font-typed">student1@avance.dev</span></p>
+            <p>Password (all): <span className="font-typed">password123</span></p>
           </div>
         </div>
         <div className="order-1 sm:order-2 sm:pt-16">

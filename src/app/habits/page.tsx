@@ -15,16 +15,17 @@ export default async function HabitsPage() {
   const user = await requireSessionUser();
   const today = startOfDay(new Date());
 
-  const habits = await prisma.habit.findMany({
-    where: { userId: user.id, archived: false },
-    include: { completions: true, shares: { include: { sharedWith: true } } },
-    orderBy: { createdAt: "asc" },
-  });
-
-  const sharedWithMe = await prisma.habitShare.findMany({
-    where: { sharedWithId: user.id },
-    include: { habit: { include: { user: true, completions: true } } },
-  });
+  const [habits, sharedWithMe] = await Promise.all([
+    prisma.habit.findMany({
+      where: { userId: user.id, archived: false },
+      include: { completions: true, shares: { include: { sharedWith: true } } },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.habitShare.findMany({
+      where: { sharedWithId: user.id },
+      include: { habit: { include: { user: true, completions: true } } },
+    }),
+  ]);
 
   return (
     <div className="mx-auto max-w-2xl w-full px-4 py-8 space-y-8">

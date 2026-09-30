@@ -1,7 +1,12 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useState } from "react";
-import AeroShards from "@/components/AeroShards";
+
+// Loaded client-side only, in its own chunk: AeroShards and the vgpu WebGPU
+// runtime are large, and a decorative background shouldn't hold up the
+// page's first render or hydration.
+const AeroShards = dynamic(() => import("@/components/AeroShards"), { ssr: false });
 
 /**
  * App-specific wrapper around the React Bits AeroShards background.
@@ -31,8 +36,10 @@ export function AeroShardsBackground({
     return <div className="absolute inset-0" style={{ backgroundColor }} aria-hidden />;
   }
 
+  // The wrapper carries the panel color so the hero's white text stays
+  // readable while the AeroShards chunk is still loading.
   return (
-    <div className="absolute inset-0">
+    <div className="absolute inset-0" style={{ backgroundColor }}>
       <AeroShards
         backgroundColor={backgroundColor}
         shardColor={shardColor}

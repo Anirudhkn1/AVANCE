@@ -8,6 +8,7 @@ const TOOL_CARDS = [
   { href: "/habits", icon: "✅", label: "Habit Tracker", description: "Build streaks that stick", glyphClassName: "bg-success-soft", glowColor: "22, 163, 74" },
   { href: "/todos", icon: "📝", label: "To-Do List", description: "Stay on top of tasks", glyphClassName: "bg-accent-soft", glowColor: "88, 80, 236" },
   { href: "/focus", icon: "⏱️", label: "Focus Mode", description: "Timed, distraction-free work", glyphClassName: "bg-danger-soft", glowColor: "220, 38, 38" },
+  { href: "/study", icon: "🧠", label: "Study", description: "Spaced-repetition flashcards", glyphClassName: "bg-accent-soft", glowColor: "88, 80, 236" },
   { href: "/how-to-use", icon: "📖", label: "How to Use", description: "Guide & tips", glyphClassName: "bg-surface-muted", glowColor: "91, 100, 114" },
 ];
 

@@ -198,10 +198,10 @@ export default async function GroupPage({ params }: { params: Promise<{ orgId: s
           <ul className="space-y-2">
             {topStudents.map((s, i) => (
               <li key={s.id} className="flex items-center gap-3 text-sm">
-                <span className="w-5 text-muted">#{i + 1}</span>
+                <span className="w-5 text-muted font-mono tabular-nums">#{i + 1}</span>
                 <Avatar seed={s.user.avatarSeed} size="sm" />
                 <span className="flex-1 font-medium">{s.user.name}</span>
-                <span className="text-muted">{s.xp} XP</span>
+                <span className="text-muted font-mono tabular-nums">{s.xp} XP</span>
               </li>
             ))}
           </ul>

@@ -28,7 +28,7 @@ export const getSessionUser = cache(async () => {
   // bug, not a normal path — every creation path below writes both together.
   return prisma.user.findUnique({
     where: { id: data.claims.sub },
-    select: { id: true, name: true, email: true, avatarSeed: true },
+    select: { id: true, name: true, email: true, avatarSeed: true, studyPreferredTime: true },
   });
 });
 

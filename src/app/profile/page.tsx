@@ -86,7 +86,7 @@ export default async function ProfilePage() {
                 </div>
                 {m.role === "STUDENT" ? (
                   <div className="grid grid-cols-3 gap-3 mt-4 text-sm">
-                    <div><p className="text-muted">XP</p><p className="font-medium">{m.xp}</p></div>
+                    <div><p className="text-muted">XP</p><p className="font-medium font-mono tabular-nums">{m.xp}</p></div>
                     <div><p className="text-muted">Checkpoints</p><p className="font-medium">{completedCheckpoints}</p></div>
                     <div><p className="text-muted">Fair Play</p><p className="font-medium">{m.fairPlayScore}</p></div>
                   </div>

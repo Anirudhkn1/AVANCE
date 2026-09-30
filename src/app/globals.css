@@ -34,17 +34,11 @@
   --color-warning-soft: var(--warning-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
-  --font-sans: var(--font-geist-sans);
-  --font-display: var(--font-bricolage); /* h1 */
-  --font-mono: var(--font-space-mono);
-  --font-typewriter: var(--font-special-elite); /* h2–h6 */
-
-  /* Extra options — not used by default. Point one of the tokens above at these,
-     or apply the utility class directly (e.g. className="font-typewriter-clean"),
-     to try it. See src/app/layout.tsx for how each one is loaded. */
-  --font-typewriter-clean: var(--font-courier-prime); /* has real bold/italic */
-  --font-typewriter-thin: var(--font-cutive-mono); /* faint, thin ribbon */
-  --font-terminal: var(--font-vt323); /* retro CRT/terminal */
+  /* See src/app/fonts.ts for how each is loaded. */
+  --font-sans: var(--font-alegreya-sc); /* all copy — true small caps */
+  --font-typed: var(--font-alegreya); /* text people type into inputs */
+  --font-mono: var(--font-space-mono); /* XP, ranks, timers, join codes */
+  --font-typewriter: var(--font-special-elite); /* "Avance" + all headings */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -75,12 +69,12 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  /* Alegreya defaults to old-style (descending) figures; lining ones read
+     cleaner in a UI full of dates and counts. */
+  font-variant-numeric: lining-nums;
 }
 
-h1 {
-  font-family: var(--font-display), var(--font-sans), Arial, Helvetica, sans-serif;
-}
-
+h1,
 h2,
 h3,
 h4,
@@ -89,9 +83,126 @@ h6 {
   font-family: var(--font-typewriter), var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
+/* Special Elite ships a single weight — faux bold smears its inked edges at
+   small sizes, so smaller headings stay at the true weight. Unlayered, so it
+   wins over Tailwind's font-semibold utilities on these tags. */
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 400;
+}
+
+/* Typed text stays in the non-small-caps cut so capitals remain visible. */
+input,
+textarea,
+select {
+  font-family: var(--font-typed), var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Landing intro (see IntroOverlay + the gate script in layout.tsx). While it
+   plays, the page underneath is laid out and rendering but invisible, and
+   can't scroll; the overlay opts itself back into visibility. */
+html[data-intro] {
+  overflow: hidden;
+}
+
+html[data-intro="play"] body {
+  visibility: hidden;
+}
+
+.intro-overlay {
+  display: none;
+}
+
+html[data-intro] .intro-overlay {
+  display: block;
+  visibility: visible;
+}
+
 ::selection {
   background: var(--accent);
   color: var(--accent-foreground);
+}
+
+/* Landing hero (ForwardFieldHero). The lockup stays hidden while the intro
+   plays and glides onto it; it's revealed the moment the glide lands. */
+html[data-intro="play"] [data-hero-lockup],
+html[data-intro="handoff"] [data-hero-lockup] {
+  opacity: 0;
+}
+
+/* Scroll cue: three brand arrows cascading downward. Uses the individual
+   `translate` property so it composes with the arrows' `rotate`. */
+@keyframes hero-cue-arrow {
+  0% {
+    opacity: 0;
+    translate: 0 -6px;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+.hero-cue-arrow {
+  opacity: 0;
+  animation: hero-cue-arrow 1.5s cubic-bezier(0.45, 0, 0.3, 1) infinite;
+}
+
+/* The mark's arrow nudges forward every few seconds. */
+@keyframes hero-arrow-nudge {
+  0%,
+  78%,
+  100% {
+    transform: translateX(0);
+  }
+  86% {
+    transform: translateX(3.5px);
+  }
+  92% {
+    transform: translateX(-0.5px);
+  }
+}
+
+.hero-arrow-idle {
+  transform-box: fill-box;
+  animation: hero-arrow-nudge 4.2s cubic-bezier(0.4, 0, 0.2, 1) 2.2s infinite;
+}
+
+/* A light sweep across the wordmark every ~7s. */
+@keyframes hero-shine {
+  0% {
+    background-position: 140% 0;
+  }
+  14%,
+  100% {
+    background-position: -40% 0;
+  }
+}
+
+.hero-shine {
+  background-image: linear-gradient(100deg, rgba(255, 255, 255, 0) 40%, #ffffff 50%, rgba(255, 255, 255, 0) 60%);
+  background-size: 250% 100%;
+  background-position: 140% 0;
+  background-clip: text;
+  -webkit-background-clip: text;
+  text-shadow: none;
+  animation: hero-shine 7s ease-in-out 2.6s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-cue-arrow {
+    animation: none;
+    opacity: 0.8;
+  }
+  .hero-arrow-idle,
+  .hero-shine {
+    animation: none;
+  }
 }
 
 @keyframes kbd-bounce {

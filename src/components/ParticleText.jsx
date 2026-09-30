@@ -1,9 +1,13 @@
 "use client";
 
-// Verbatim from React Bits (DavidHDev/react-bits, TextAnimations/ParticleText)
-// — only the "use client" directive above was added for Next.js App Router
-// compatibility.
+// From React Bits (DavidHDev/react-bits, TextAnimations/ParticleText). Local
+// changes: the "use client" directive above, and the opt-in `introHandoff`
+// prop — while the landing intro plays (<html data-intro>), the particles sit
+// at their targets undrawn and their viewport positions are published so the
+// intro can fly its own logo particles onto exactly those spots; drawing
+// resumes on INTRO_DONE_EVENT. See IntroOverlay.
 import { useEffect, useRef } from 'react';
+import { INTRO_DONE_EVENT, PARTICLES_READY_EVENT } from '@/lib/brand';
 import './ParticleText.css';
 
 const hexToRgb = hex => {
@@ -71,6 +75,7 @@ const ParticleText = ({
   fontWeight = 800,
   fontFamily = 'inherit',
   glow = true,
+  introHandoff = false,
   className = '',
   style
 }) => {
@@ -97,6 +102,7 @@ const ParticleText = ({
     let width = 0;
     let height = 0;
     let dpr = 1;
+    let held = introHandoff && document.documentElement.hasAttribute('data-intro');
 
     const pointer = {
       active: false,
@@ -145,6 +151,11 @@ const ParticleText = ({
 
     const render = now => {
       ctx.clearRect(0, 0, width, height);
+
+      if (held) {
+        animationFrame = window.requestAnimationFrame(render);
+        return;
+      }
 
       if (glow && !reducedMotion) {
         ctx.shadowBlur = particleSize * 3;
@@ -322,7 +333,14 @@ const ParticleText = ({
       pointer.smoothX = pointer.x;
       pointer.smoothY = pointer.y;
 
-      if (reducedMotion) {
+      if (held) {
+        particles.forEach(particle => {
+          particle.x = particle.targetX;
+          particle.y = particle.targetY;
+        });
+        gathering = false;
+        publishTargets();
+      } else if (reducedMotion) {
         particles.forEach(particle => {
           particle.x = particle.targetX;
           particle.y = particle.targetY;
@@ -336,6 +354,28 @@ const ParticleText = ({
       }
 
       ensureRenderLoop();
+    };
+
+    const publishTargets = () => {
+      const rect = canvas.getBoundingClientRect();
+      window.__avanceHeroParticles = {
+        glowColor: glow ? highlightColor : null,
+        glowBlur: particleSize * 3,
+        particles: particles.map(particle => ({
+          x: rect.left + particle.targetX,
+          y: rect.top + particle.targetY,
+          size: particle.size,
+          color: particle.color
+        }))
+      };
+      window.dispatchEvent(new CustomEvent(PARTICLES_READY_EVENT));
+    };
+
+    const handleIntroDone = event => {
+      if (!held) return;
+      held = false;
+      window.__avanceHeroParticles = undefined;
+      if (event.detail?.gather) startGather(true);
     };
 
     const queueSample = () => {
@@ -374,6 +414,7 @@ const ParticleText = ({
     canvas.addEventListener('pointermove', handlePointerMove);
     canvas.addEventListener('pointerleave', handlePointerLeave);
     canvas.addEventListener('click', handleClick);
+    window.addEventListener(INTRO_DONE_EVENT, handleIntroDone);
 
     const resizeObserver = new ResizeObserver(queueSample);
     resizeObserver.observe(container);
@@ -387,6 +428,7 @@ const ParticleText = ({
       canvas.removeEventListener('pointermove', handlePointerMove);
       canvas.removeEventListener('pointerleave', handlePointerLeave);
       canvas.removeEventListener('click', handleClick);
+      window.removeEventListener(INTRO_DONE_EVENT, handleIntroDone);
 
       if (animationFrame !== null) window.cancelAnimationFrame(animationFrame);
       if (resizeFrame !== null) window.cancelAnimationFrame(resizeFrame);
@@ -407,7 +449,8 @@ const ParticleText = ({
     fontSize,
     fontWeight,
     fontFamily,
-    glow
+    glow,
+    introHandoff
   ]);
 
   return (

@@ -171,7 +171,7 @@ export function StatTile({
   return (
     <div className="rounded-xl border border-border bg-surface-muted px-4 py-3">
       <div className="text-xs font-medium uppercase tracking-wide text-muted">{label}</div>
-      <div className="mt-1 text-2xl font-semibold tracking-tight">{value}</div>
+      <div className="mt-1 text-2xl font-semibold tracking-tight font-mono tabular-nums">{value}</div>
       {hint && <div className="text-xs text-muted mt-0.5">{hint}</div>}
     </div>
   );

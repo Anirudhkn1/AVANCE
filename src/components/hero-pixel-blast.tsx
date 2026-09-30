@@ -1,7 +1,12 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Component, type ReactNode } from "react";
-import PixelBlast from "@/components/PixelBlast";
+
+// Loaded client-side only, in its own chunk: three.js + postprocessing are
+// large, and a decorative background shouldn't hold up the page's first
+// render or hydration — the plain theme background shows until it's ready.
+const PixelBlast = dynamic(() => import("@/components/PixelBlast"), { ssr: false });
 
 // Same failure mode as AppBackground (see its header comment for why a class
 // boundary is what's needed here) — PixelBlast's WebGL/postprocessing setup

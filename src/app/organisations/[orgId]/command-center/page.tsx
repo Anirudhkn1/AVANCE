@@ -17,23 +17,23 @@ export default async function CommandCenterPage({ params }: { params: Promise<{ 
     notFound();
   }
 
-  const org = await prisma.organisation.findUniqueOrThrow({ where: { id: orgId } });
-  const groups = await prisma.group.findMany({ where: { organisationId: orgId } });
+  const [org, groups] = await Promise.all([
+    prisma.organisation.findUniqueOrThrow({ where: { id: orgId } }),
+    prisma.group.findMany({ where: { organisationId: orgId } }),
+  ]);
 
-  const activeProjects = await Promise.all(
-    groups.map((g) =>
-      prisma.project.findFirst({
+  // Each group's analytics starts as soon as its own project lookup
+  // resolves, instead of waiting for every group's lookup first.
+  const rowsData = await Promise.all(
+    groups.map(async (g) => {
+      const project = await prisma.project.findFirst({
         where: { groupId: g.id, status: "PUBLISHED" },
         orderBy: { publishedAt: "desc" },
-      })
-    )
+      });
+      return { project, analytics: project ? await getProjectAnalytics(project.id) : null };
+    })
   );
-
-  const groupAnalytics = await Promise.all(
-    activeProjects.map((p) => (p ? getProjectAnalytics(p.id) : null))
-  );
-
-  const rows = groups.map((g, i) => ({ group: g, project: activeProjects[i], analytics: groupAnalytics[i] }));
+  const rows = groups.map((g, i) => ({ group: g, ...rowsData[i] }));
   const withAnalytics = rows.filter((r) => r.analytics);
 
   const totals = withAnalytics.reduce(
