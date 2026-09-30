@@ -113,6 +113,17 @@ export function ForwardFieldHero({ children }: { children: ReactNode }) {
     let launchedAt = -1; // wall-clock seconds
     let chipIndex = -1;
     const popped = CHECKPOINTS.map(() => false);
+    // Adaptive quality: a running average of frame time; while it stays slow
+    // the scene steps down (resolution, then chevron count, then 30fps).
+    let frameMs = 16.7;
+    let qualityLevel = 0;
+    let qualityCheckedAt = 0;
+    let glReadyAt = -1;
+    let skipFrame = false;
+    // Paused while a navigation is starting, so the next page gets the main
+    // thread instead of competing with this loop (see onNavigate).
+    let suspended = false;
+    let resumeTimer = 0;
     let gl: ReturnType<typeof import("./forward-field-scene").createForwardField> | null = null;
 
     const layout = () => {
@@ -159,11 +170,27 @@ export function ForwardFieldHero({ children }: { children: ReactNode }) {
 
     const frame = (now: number) => {
       raf = 0;
-      if (disposed) return;
-      const dt = Math.min(0.05, (now - last) / 1000);
+      if (disposed || suspended) return;
+      // Lowest quality level: draw every other frame.
+      if (qualityLevel >= 3 && !reduced && (skipFrame = !skipFrame)) {
+        raf = requestAnimationFrame(frame);
+        return;
+      }
+      const rawMs = Math.min(100, now - last);
+      const dt = Math.min(0.05, rawMs / 1000);
       last = now;
       const wall = now / 1000;
       if (!reduced) t += dt;
+
+      if (gl && !reduced && glReadyAt >= 0 && wall - glReadyAt > 1.5 && qualityLevel < 3) {
+        frameMs += (rawMs - frameMs) * 0.08;
+        if (frameMs > 24 && wall - qualityCheckedAt > 2) {
+          qualityCheckedAt = wall;
+          qualityLevel++;
+          if (qualityLevel < 3) gl.setQuality(qualityLevel);
+          frameMs = 16.7;
+        }
+      }
 
       // Scroll position and velocity.
       const rect = section.getBoundingClientRect();
@@ -275,12 +302,37 @@ export function ForwardFieldHero({ children }: { children: ReactNode }) {
         reduced,
       });
 
-      if (!reduced && inView) raf = requestAnimationFrame(frame);
+      if (!reduced && inView && !suspended) raf = requestAnimationFrame(frame);
     };
 
     const requestFrame = () => {
-      if (!raf && !disposed) raf = requestAnimationFrame(frame);
+      if (!raf && !disposed && !suspended) raf = requestAnimationFrame(frame);
     };
+
+    // A same-site link click (the navbar, the hero buttons) or a form submit
+    // (Sign out) means we're about to leave: stop drawing so the navigation
+    // isn't starved of main-thread time. If we're still here a few seconds
+    // later (navigation cancelled or failed), carry on.
+    const suspend = () => {
+      suspended = true;
+      cancelAnimationFrame(raf);
+      raf = 0;
+      window.clearTimeout(resumeTimer);
+      resumeTimer = window.setTimeout(() => {
+        suspended = false;
+        last = performance.now();
+        requestFrame();
+      }, 4000);
+    };
+    const onNavigate = (e: MouseEvent) => {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!a || a.target === "_blank" || a.origin !== location.origin) return;
+      if (a.pathname === location.pathname && a.search === location.search) return;
+      suspend();
+    };
+    document.addEventListener("click", onNavigate, true);
+    document.addEventListener("submit", suspend, true);
 
     // --- Listeners ---
     const onPointer = (e: PointerEvent) => {
@@ -379,6 +431,7 @@ export function ForwardFieldHero({ children }: { children: ReactNode }) {
         if (disposed) return;
         try {
           gl = scene.createForwardField(THREE, host, stage);
+          glReadyAt = performance.now() / 1000;
           layout();
           requestFrame();
         } catch (error) {
@@ -397,6 +450,9 @@ export function ForwardFieldHero({ children }: { children: ReactNode }) {
       document.documentElement.removeEventListener("pointerleave", onLeave);
       window.removeEventListener("scroll", onScroll);
       cueButton?.removeEventListener("click", onCue);
+      document.removeEventListener("click", onNavigate, true);
+      document.removeEventListener("submit", suspend, true);
+      window.clearTimeout(resumeTimer);
       resizeObserver.disconnect();
       viewObserver.disconnect();
       introObserver?.disconnect();
