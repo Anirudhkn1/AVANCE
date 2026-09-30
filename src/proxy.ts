@@ -28,10 +28,21 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // Do not add logic between createServerClient and this call — getUser()
-  // is what actually revalidates the token and rewrites the cookie when it
+  // Do not add logic between createServerClient and this call — this is
+  // what actually revalidates the token and rewrites the cookie when it
   // needs refreshing.
-  await supabase.auth.getUser();
+  //
+  // getClaims() (not getUser()) — same guarantee (a cryptographically
+  // verified session, refreshed first if it's close to expiring — see
+  // GoTrueClient.getClaims/getSession), but getUser() always round-trips to
+  // Supabase's Auth server while getClaims() verifies the JWT locally via
+  // WebCrypto against the project's cached JWKS. This runs in the matcher
+  // below on *every* request — every navigation, every server action (a
+  // button click), every asset not explicitly excluded — so getUser()'s
+  // ~200ms here was effectively a floor under every single interaction in
+  // the app, compounding with any of getUser()'s own occasional slower
+  // responses. See the identical fix + measurements in src/lib/session.ts.
+  await supabase.auth.getClaims();
 
   return response;
 }

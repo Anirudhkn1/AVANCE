@@ -35,7 +35,6 @@ export function QuestBuilderWizard({ orgId, groupId }: { orgId: string; groupId:
   const [error, setError] = useState<string | null>(null);
 
   const [sourceType, setSourceType] = useState<SourceType>("TEXT");
-  const [sourceExcerpt, setSourceExcerpt] = useState("");
   const [warnings, setWarnings] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -45,9 +44,8 @@ export function QuestBuilderWizard({ orgId, groupId }: { orgId: string; groupId:
   const [checkpoints, setCheckpoints] = useState<EditableCheckpoint[]>([]);
   const [aiGenerated, setAiGenerated] = useState(false);
 
-  function loadProposal(proposal: QuestProposal, source: SourceType, excerpt: string) {
+  function loadProposal(proposal: QuestProposal, source: SourceType) {
     setSourceType(source);
-    setSourceExcerpt(excerpt.slice(0, 4000));
     setWarnings(proposal.warnings);
     setTitle(proposal.title);
     setDescription(proposal.description);
@@ -58,7 +56,7 @@ export function QuestBuilderWizard({ orgId, groupId }: { orgId: string; groupId:
         title: c.title,
         description: c.description,
         submissionRequired: c.submissionRequired,
-        xpValue: 10,
+        xpValue: c.xpValue ?? 10,
         source: c.source,
       }))
     );
@@ -71,7 +69,7 @@ export function QuestBuilderWizard({ orgId, groupId }: { orgId: string; groupId:
     startAnalyzing(async () => {
       const res = await analyzeAssignmentTextAction(groupId, rawText);
       if (!res.ok) return setError(res.error);
-      loadProposal(res.proposal, res.sourceType, rawText);
+      loadProposal(res.proposal, res.sourceType);
     });
   }
 
@@ -82,13 +80,12 @@ export function QuestBuilderWizard({ orgId, groupId }: { orgId: string; groupId:
       fd.set("file", file);
       const res = await analyzeAssignmentFileAction(groupId, fd);
       if (!res.ok) return setError(res.error);
-      loadProposal(res.proposal, res.sourceType, res.extractedText);
+      loadProposal(res.proposal, res.sourceType);
     });
   }
 
   function startManual() {
     setSourceType("MANUAL");
-    setSourceExcerpt("");
     setWarnings([]);
     setTitle("");
     setDescription("");
@@ -144,7 +141,6 @@ export function QuestBuilderWizard({ orgId, groupId }: { orgId: string; groupId:
       verificationMode,
       aiGenerated,
       sourceType,
-      sourceExcerpt,
       checkpoints: checkpoints.map((c) => ({
         title: c.title.trim(),
         description: c.description.trim(),
@@ -184,7 +180,7 @@ export function QuestBuilderWizard({ orgId, groupId }: { orgId: string; groupId:
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent"
             />
             <Button onClick={handleAnalyzeText} disabled={analyzing || rawText.trim().length === 0}>
-              {analyzing ? "Analyzing…" : "Analyze assignment"}
+              {analyzing ? "Reading and planning the checkpoints… (up to a minute)" : "Analyze assignment"}
             </Button>
           </div>
         ) : (
@@ -199,7 +195,7 @@ export function QuestBuilderWizard({ orgId, groupId }: { orgId: string; groupId:
               disabled={analyzing}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-accent-soft file:text-accent file:px-3 file:py-1.5"
             />
-            {analyzing && <p className="text-sm text-muted">Extracting and analyzing…</p>}
+            {analyzing && <p className="text-sm text-muted">Reading the file and planning the checkpoints… (up to a minute)</p>}
           </div>
         )}
 

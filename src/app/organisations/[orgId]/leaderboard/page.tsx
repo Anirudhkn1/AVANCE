@@ -16,11 +16,12 @@ export default async function LeaderboardPage({
   const { orgId } = await params;
   const { group: groupIdParam } = await searchParams;
   const user = await requireSessionUser();
-  const membership = await requireMembership(user.id, orgId).catch(() => null);
-  if (!membership) notFound();
-
-  const org = await prisma.organisation.findUniqueOrThrow({ where: { id: orgId } });
-  const groups = await prisma.group.findMany({ where: { organisationId: orgId }, orderBy: { createdAt: "asc" } });
+  const [membership, org, groups] = await Promise.all([
+    requireMembership(user.id, orgId).catch(() => null),
+    prisma.organisation.findUnique({ where: { id: orgId } }),
+    prisma.group.findMany({ where: { organisationId: orgId }, orderBy: { createdAt: "asc" } }),
+  ]);
+  if (!membership || !org) notFound();
   if (groups.length === 0) {
     return (
       <div className="mx-auto max-w-2xl w-full px-4 py-16">
@@ -31,16 +32,17 @@ export default async function LeaderboardPage({
 
   const activeGroup = groups.find((g) => g.id === groupIdParam) ?? groups[0];
 
-  const project = await prisma.project.findFirst({
-    where: { groupId: activeGroup.id, status: "PUBLISHED" },
-    orderBy: { publishedAt: "desc" },
-    include: { checkpoints: true },
-  });
-
-  const groupMembers = await prisma.groupMembership.findMany({
-    where: { groupId: activeGroup.id },
-    include: { user: true },
-  });
+  const [project, groupMembers] = await Promise.all([
+    prisma.project.findFirst({
+      where: { groupId: activeGroup.id, status: "PUBLISHED" },
+      orderBy: { publishedAt: "desc" },
+      include: { checkpoints: true },
+    }),
+    prisma.groupMembership.findMany({
+      where: { groupId: activeGroup.id },
+      include: { user: true },
+    }),
+  ]);
   const memberships = await prisma.organisationMembership.findMany({
     where: { organisationId: orgId, userId: { in: groupMembers.map((m) => m.userId) }, role: "STUDENT" },
   });
@@ -127,11 +129,11 @@ export default async function LeaderboardPage({
             <ul className="divide-y divide-border">
               {rows.map((r, i) => (
                 <li key={r.userId} className="flex items-center gap-3 px-5 py-3">
-                  <span className="w-6 text-sm text-muted">#{i + 1}</span>
+                  <span className="w-6 text-sm text-muted font-mono tabular-nums">#{i + 1}</span>
                   <Avatar seed={r.avatarSeed} size="sm" />
                   <span className="flex-1 font-medium text-sm">{r.name}</span>
                   <Badge tone="neutral">{r.completedCount}/{r.total}</Badge>
-                  <span className="text-sm text-muted w-16 text-right">{r.xp} XP</span>
+                  <span className="text-sm text-muted w-16 text-right font-mono tabular-nums">{r.xp} XP</span>
                 </li>
               ))}
             </ul>

@@ -1,7 +1,12 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Component, type ReactNode } from "react";
-import PixelBlast from "@/components/PixelBlast";
+
+// Loaded client-side only, in its own chunk: three.js + postprocessing are
+// large, and a decorative background shouldn't hold up the page's first
+// render or hydration — the plain theme background shows until it's ready.
+const PixelBlast = dynamic(() => import("@/components/PixelBlast"), { ssr: false });
 
 // Same failure mode as AppBackground (see its header comment for why a class
 // boundary is what's needed here) — PixelBlast's WebGL/postprocessing setup
@@ -55,6 +60,9 @@ export function HeroPixelBlast() {
           speed={0.6}
           edgeFade={0.1}
           transparent
+          // MSAA is a real per-frame GPU cost that buys nothing at 1.2%
+          // opacity — nobody can see the jaggies it would otherwise smooth.
+          antialias={false}
         />
       </HeroPixelBlastErrorBoundary>
     </div>

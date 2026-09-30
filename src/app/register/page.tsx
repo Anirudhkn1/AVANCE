@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 import { registerAction } from "@/actions/auth";
 import { Button } from "@/components/ui";
 import { PasswordField } from "@/components/password-field";
@@ -20,8 +21,8 @@ export default function RegisterPage() {
       <div className="flex flex-col sm:flex-row items-center sm:items-start justify-center gap-6">
         <div className="w-full max-w-sm order-2 sm:order-1">
           <div className="mb-8 text-center">
-            <Link href="/" className="text-xl font-semibold tracking-tight">
-              Avance
+            <Link href="/" aria-label="Avance home">
+              <Logo className="text-2xl" markClassName="h-8 w-8" />
             </Link>
             <p className="text-sm text-muted mt-1">Turn your next assignment into a quest.</p>
           </div>

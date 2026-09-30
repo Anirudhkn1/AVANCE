@@ -70,7 +70,7 @@ export function FocusTimer() {
     const pct = Math.round(((running.targetSeconds - remaining) / running.targetSeconds) * 100);
     return (
       <div className="flex flex-col items-center gap-6 py-6">
-        <div className="text-5xl sm:text-6xl font-semibold tabular-nums tracking-tight">
+        <div className="text-5xl sm:text-6xl font-semibold font-mono tabular-nums tracking-tight">
           {formatDuration(remaining)}
         </div>
         <div className="h-2 w-full max-w-xs rounded-full bg-surface-muted overflow-hidden">

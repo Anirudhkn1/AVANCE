@@ -1,7 +1,13 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 import { Component, type ReactNode } from "react";
-import PixelBlast from "@/components/PixelBlast";
+
+// Loaded client-side only, in its own chunk: three.js + postprocessing are
+// large, and a decorative background shouldn't hold up the page's first
+// render or hydration — the plain theme background shows until it's ready.
+const PixelBlast = dynamic(() => import("@/components/PixelBlast"), { ssr: false });
 
 // PixelBlast has no built-in onError (unlike AeroShards) — WebGL/postprocessing
 // setup runs synchronously inside its effect, so a class boundary is what
@@ -47,6 +53,11 @@ class BackgroundErrorBoundary extends Component<{ children: ReactNode }, { faile
  * content above it in paint order still captures its own clicks first.
  */
 export function AppBackground() {
+  // The landing hero is a full-bleed WebGL stage of its own that completely
+  // covers this layer — rendering both there is pure wasted GPU time.
+  const pathname = usePathname();
+  if (pathname === "/") return null;
+
   return (
     <div className="fixed inset-0 -z-10 opacity-[0.025]" aria-hidden>
       <BackgroundErrorBoundary>
@@ -66,6 +77,9 @@ export function AppBackground() {
           speed={0.6}
           edgeFade={0.1}
           transparent
+          // MSAA is a real per-frame GPU cost that buys nothing at 2.5%
+          // opacity — nobody can see the jaggies it would otherwise smooth.
+          antialias={false}
         />
       </BackgroundErrorBoundary>
     </div>

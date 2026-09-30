@@ -40,6 +40,8 @@ model User {
   habitShares      HabitShare[]
   todos            Todo[]
   focusSessions    FocusSession[]
+  decks            Deck[]
+  studyPreferredTime String? // "HH:MM" 24-hour — when the daily review batch is scheduled on the study calendar
   notifications    Notification[]
   activityEvents   ActivityEvent[]
   reactions        Reaction[]
@@ -329,6 +331,39 @@ model FocusSession {
   endedAt       DateTime?
 
   user User @relation(fields: [userId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// Spaced repetition ("Study") — deliberately outside the org hierarchy, like
+// Habit/Todo/FocusSession. No sharing (unlike Habit) — see src/lib/study.ts
+// for the SM-2 scheduling math.
+// ---------------------------------------------------------------------------
+
+model Deck {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String
+  deadline  DateTime? // optional; 2 days after this passes, the deck (and its cards) is auto-deleted
+  createdAt DateTime  @default(now())
+
+  user  User        @relation(fields: [userId], references: [id])
+  cards Flashcard[]
+}
+
+// SM-2 scheduling state lives directly on the card: easeFactor/interval/
+// repetitions are SM-2's algorithm state, dueDate is the next review date.
+model Flashcard {
+  id          String   @id @default(cuid())
+  deckId      String
+  front       String
+  back        String
+  easeFactor  Float    @default(2.5)
+  interval    Int      @default(0) // days
+  repetitions Int      @default(0)
+  dueDate     DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  deck Deck @relation(fields: [deckId], references: [id])
 }
 
 // ---------------------------------------------------------------------------

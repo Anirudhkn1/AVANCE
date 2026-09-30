@@ -1,5 +1,5 @@
 import "server-only";
-import { mkdir, writeFile, readFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile, unlink } from "node:fs/promises";
 import path from "node:path";
 
 // Deliberately outside /public — submissions are only ever served through
@@ -26,8 +26,25 @@ export async function saveSubmissionFile(params: {
   return { relativePath: path.join(params.organisationId, params.checkpointId, fileName) };
 }
 
-export async function readSubmissionFile(relativePath: string): Promise<Buffer> {
+function resolveUploadPath(relativePath: string): string {
   const fullPath = path.join(UPLOAD_ROOT, relativePath);
-  if (!fullPath.startsWith(UPLOAD_ROOT)) throw new Error("Invalid file path.");
-  return readFile(fullPath);
+  if (!fullPath.startsWith(UPLOAD_ROOT + path.sep)) throw new Error("Invalid file path.");
+  return fullPath;
+}
+
+export async function readSubmissionFile(relativePath: string): Promise<Buffer> {
+  return readFile(resolveUploadPath(relativePath));
+}
+
+/**
+ * Submissions are only kept until a host has reviewed them — the PDF is
+ * evidence for the review, not an archive. A file that's already gone is
+ * treated as deleted, so this is safe to call repeatedly.
+ */
+export async function deleteSubmissionFile(relativePath: string): Promise<void> {
+  try {
+    await unlink(resolveUploadPath(relativePath));
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+  }
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { logoutAction } from "@/actions/auth";
 import { Avatar } from "@/components/ui";
 import GooeyNav from "@/components/GooeyNav";
+import { Logo } from "@/components/logo";
 
 // Organisations/Habits/To-Do/Focus are reached via icons on the /dashboard
 // desktop itself — the nav stays a short list of what isn't an icon there.
@@ -19,7 +20,7 @@ export function NavbarFallback() {
   return (
     <header className="border-b border-border bg-surface sticky top-0 z-20">
       <div className="mx-auto max-w-6xl flex items-center gap-6 px-4 py-3">
-        <span className="font-semibold tracking-tight text-base shrink-0">Avance</span>
+        <Logo className="text-lg shrink-0" />
         <div className="ml-auto h-8 w-8 rounded-full bg-surface-muted animate-loader-pulse" />
       </div>
     </header>
@@ -36,8 +37,8 @@ export function Navbar({
   return (
     <header className="border-b border-border bg-surface sticky top-0 z-20">
       <div className="mx-auto max-w-6xl flex items-center gap-6 px-4 py-3">
-        <Link href={user ? "/dashboard" : "/"} className="font-semibold tracking-tight text-base shrink-0">
-          Avance
+        <Link href={user ? "/dashboard" : "/"} className="shrink-0" aria-label="Avance home">
+          <Logo className="text-lg" />
         </Link>
         {user && (
           <div className="hidden md:block">
