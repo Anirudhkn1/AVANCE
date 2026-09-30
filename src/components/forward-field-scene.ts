@@ -78,11 +78,19 @@ function makeTexture(THREE: typeof ThreeNS, w: number, h: number, paint: (c: Can
 }
 
 export function createForwardField(THREE: typeof ThreeNS, host: HTMLElement, stage: Stage) {
-  const dpr = window.devicePixelRatio || 1;
-  // MSAA only where it's needed: on high-DPI screens the extra pixels already
-  // smooth the edges, and full-screen MSAA is a real per-frame GPU cost.
-  const renderer = new THREE.WebGLRenderer({ antialias: dpr < 1.5, alpha: true, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(dpr, 1.75));
+  // No MSAA: on laptop GPUs full-screen multisampling is the single biggest
+  // per-frame cost here, and the shapes are small enough not to need it.
+  const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: "high-performance" });
+  // Quality levels the hero steps down through if frames run slow (see
+  // setQuality): resolution first, then how many chevrons are drawn.
+  const basePixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+  const QUALITY = [
+    { pixelRatio: basePixelRatio, share: 1 },
+    { pixelRatio: Math.min(basePixelRatio, 1), share: 0.75 },
+    { pixelRatio: Math.min(basePixelRatio, 0.75), share: 0.55 },
+  ];
+  let quality = 0;
+  renderer.setPixelRatio(QUALITY[0].pixelRatio);
   renderer.setClearColor(0x000000, 0);
   Object.assign(renderer.domElement.style, { width: "100%", height: "100%", display: "block" });
   host.appendChild(renderer.domElement);
@@ -216,6 +224,7 @@ export function createForwardField(THREE: typeof ThreeNS, host: HTMLElement, sta
   const spMax = new Float32Array(MAX_SPARKS).fill(1);
   const spSize = new Float32Array(MAX_SPARKS);
   let spNext = 0;
+  let sparksActive = true; // one pass on the first frame parks every spark
 
   // Checkpoint gates (field phase), nodes + shockwaves (path phase).
   const ringGeo = new THREE.RingGeometry(0.8, 1, 48);
@@ -263,7 +272,9 @@ export function createForwardField(THREE: typeof ThreeNS, host: HTMLElement, sta
     renderer.setSize(stage.w, stage.h, false);
     camera.right = stage.w;
     camera.bottom = stage.h;
-    active = Math.round(Math.min(MAX_CHEVRONS, Math.max(260, (stage.w * stage.h) / 1400)) * budget);
+    active = Math.round(
+      Math.min(MAX_CHEVRONS, Math.max(260, (stage.w * stage.h) / 1400)) * budget * QUALITY[quality].share,
+    );
     chevrons.count = trails.count = active;
     for (let i = 0; i < PATH_POINTS; i++) {
       const x = -10 + ((stage.w + 20) * i) / (PATH_POINTS - 1);
@@ -293,6 +304,17 @@ export function createForwardField(THREE: typeof ThreeNS, host: HTMLElement, sta
       spSize[i] = 5 + Math.random() * (big ? 12 : 8);
     }
     if (big) flash = 1;
+    sparksActive = true;
+  };
+
+  /** Steps rendering cost down (0 = full). Returns false at the floor. */
+  const setQuality = (level: number) => {
+    const next = Math.min(QUALITY.length - 1, Math.max(0, level));
+    if (next === quality) return false;
+    quality = next;
+    renderer.setPixelRatio(QUALITY[quality].pixelRatio);
+    layout();
+    return true;
   };
 
   const render = (f: FieldFrame) => {
@@ -388,13 +410,15 @@ export function createForwardField(THREE: typeof ThreeNS, host: HTMLElement, sta
     chevrons.instanceMatrix.needsUpdate = trails.instanceMatrix.needsUpdate = true;
     chevrons.instanceColor!.needsUpdate = trails.instanceColor!.needsUpdate = true;
 
-    // Sparks.
+    // Sparks — skipped entirely (no buffer upload) while none are alive.
     const drag = Math.exp(-dt * 2.6);
-    for (let i = 0; i < MAX_SPARKS; i++) {
+    let alive = 0;
+    for (let i = 0; sparksActive && i < MAX_SPARKS; i++) {
       if (spLife[i] <= 0) {
         put2D(sm, i, -999, -999, 1, 0, 0, 0);
         continue;
       }
+      alive++;
       spLife[i] -= dt;
       spVX[i] *= drag;
       spVY[i] *= drag;
@@ -408,8 +432,11 @@ export function createForwardField(THREE: typeof ThreeNS, host: HTMLElement, sta
       sc[i * 3 + 1] = lerp(LAVENDER.g, WHITE.g, life) * a;
       sc[i * 3 + 2] = lerp(LAVENDER.b, WHITE.b, life) * a;
     }
-    sparks.instanceMatrix.needsUpdate = true;
-    sparks.instanceColor!.needsUpdate = true;
+    if (sparksActive) {
+      sparks.instanceMatrix.needsUpdate = true;
+      sparks.instanceColor!.needsUpdate = true;
+      sparksActive = alive > 0;
+    }
 
     gates.forEach((gate, i) => {
       const x = s.gateX[i];
@@ -459,6 +486,9 @@ export function createForwardField(THREE: typeof ThreeNS, host: HTMLElement, sta
   };
 
   const dispose = () => {
+    // Hand the GPU back straight away rather than whenever GC gets to it —
+    // this runs as you navigate away, while the next page is rendering.
+    renderer.forceContextLoss();
     renderer.dispose();
     renderer.domElement.remove();
     scene.traverse((o) => {
@@ -469,5 +499,5 @@ export function createForwardField(THREE: typeof ThreeNS, host: HTMLElement, sta
     [trailTex, glowTex, gateTex].forEach((tex) => tex.dispose());
   };
 
-  return { render, layout, burst, dispose };
+  return { render, layout, burst, setQuality, dispose };
 }

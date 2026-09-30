@@ -5,8 +5,9 @@ import { MARK_PATHS, MARK_VIEWBOX } from "@/lib/brand";
 export function LogoMark({ className = "" }: { className?: string }) {
   return (
     <svg viewBox={MARK_VIEWBOX} className={className} fill="currentColor" aria-hidden="true">
-      {Object.values(MARK_PATHS).map((d) => (
-        <path key={d} d={d} />
+      {/* data-part lets CSS target one piece, e.g. the navbar nudging the arrow on hover. */}
+      {Object.entries(MARK_PATHS).map(([part, d]) => (
+        <path key={part} data-part={part} d={d} />
       ))}
     </svg>
   );
