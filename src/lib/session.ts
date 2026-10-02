@@ -19,18 +19,36 @@ import { prisma } from "@/lib/prisma";
 // @supabase/auth-js) — can't regress correctness, only remove latency.
 // Several pages call this more than once per render (layout + page), so
 // cache() dedupes it to one call per request either way.
-export const getSessionUser = cache(async () => {
+/** The verified user id from the session token alone — no database query. */
+export const getSessionUserId = cache(async () => {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
   if (error || !data) return null;
+  return data.claims.sub;
+});
+
+export const getSessionUser = cache(async () => {
+  const userId = await getSessionUserId();
+  if (!userId) return null;
 
   // Signed in with Supabase but no matching profile row is a data-integrity
   // bug, not a normal path — every creation path below writes both together.
   return prisma.user.findUnique({
-    where: { id: data.claims.sub },
+    where: { id: userId },
     select: { id: true, name: true, email: true, avatarSeed: true, studyPreferredTime: true },
   });
 });
+
+/**
+ * Like requireSessionUser, but only the id — read from the verified token, no
+ * database query. Pages that just need the id use this so their own queries
+ * start straight away instead of waiting a round trip for the profile row.
+ */
+export async function requireSessionUserId() {
+  const userId = await getSessionUserId();
+  if (!userId) redirect("/login");
+  return userId;
+}
 
 /** Use in server components/pages. Throws Next's redirect (not a real error) when signed out. */
 export async function requireSessionUser() {

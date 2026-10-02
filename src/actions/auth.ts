@@ -16,7 +16,7 @@ export async function loginAction(_prevState: string | undefined, formData: Form
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return "Incorrect email or password.";
 
-  redirect("/dashboard");
+  redirect("/profiles");
 }
 
 const registerSchema = z.object({
@@ -70,7 +70,7 @@ export async function registerAction(_prevState: string | undefined, formData: F
   const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
   if (signInError) return "Account created — please sign in.";
 
-  redirect("/dashboard");
+  redirect("/profiles");
 }
 
 export async function logoutAction() {

@@ -1,4 +1,6 @@
-@import "tailwindcss";
+/* Only scan src/ for class names — the default scans the whole repo (docs,
+   prisma, pitch assets) on every CSS rebuild. */
+@import "tailwindcss" source("..");
 
 :root {
   --background: #f6f7fb;

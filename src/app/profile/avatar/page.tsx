@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireSessionUser } from "@/lib/session";
 import { updateAvatarAction } from "@/actions/profile";
-import { AVATAR_STYLES, AVATAR_STYLE_LABELS, avatarValue, avatarDataUri, parseAvatarValue, isAvatarStyle, type AvatarStyle } from "@/lib/avatar";
+import { AVATAR_STYLES, AVATAR_STYLE_LABELS, avatarValue, parseAvatarValue, isAvatarStyle, type AvatarStyle } from "@/lib/avatar";
+import { avatarSrc } from "@/lib/avatar-url";
 import { Card } from "@/components/ui";
 
 const OPTIONS_PER_SHUFFLE = 12;
@@ -63,9 +64,9 @@ export default async function AvatarPickerPage({
                     isCurrent ? "border-accent" : "border-transparent hover:border-border"
                   }`}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element -- generated SVG data: URI */}
+                  {/* eslint-disable-next-line @next/next/no-img-element -- generated, immutably cached SVG */}
                   <img
-                    src={avatarDataUri(avatarValue(style, seed), 96)}
+                    src={avatarSrc(avatarValue(style, seed))}
                     alt=""
                     className="w-full h-full bg-surface-muted"
                   />

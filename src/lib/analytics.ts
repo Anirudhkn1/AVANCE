@@ -1,4 +1,5 @@
 import "server-only";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { computeRisk, type RiskResult } from "@/lib/risk";
 import { getCheckpointStates, getCompletedCount } from "@/lib/progress";
@@ -33,33 +34,51 @@ export interface ProjectAnalytics {
   pendingVerifications: number;
 }
 
+/** Include this when loading a project to pass it straight to getProjectAnalytics. */
+export const ANALYTICS_PROJECT_INCLUDE = {
+  checkpoints: { orderBy: { order: "asc" } },
+  group: true,
+} satisfies Prisma.ProjectInclude;
+
+export type AnalyticsProject = Prisma.ProjectGetPayload<{ include: typeof ANALYTICS_PROJECT_INCLUDE }>;
+
 /**
  * Institution Command Center analytics (PRD §16-19). Built only from
  * checkpoint completion + deadlines — no device/activity monitoring.
+ * Pass an already-loaded project (with ANALYTICS_PROJECT_INCLUDE) to skip
+ * re-fetching it.
  */
-export async function getProjectAnalytics(projectId: string, now: Date = new Date()): Promise<ProjectAnalytics> {
-  const project = await prisma.project.findUniqueOrThrow({
-    where: { id: projectId },
-    include: { checkpoints: { orderBy: { order: "asc" } }, group: true },
-  });
+export async function getProjectAnalytics(
+  projectOrId: string | AnalyticsProject,
+  now: Date = new Date()
+): Promise<ProjectAnalytics> {
+  const project =
+    typeof projectOrId === "string"
+      ? await prisma.project.findUniqueOrThrow({ where: { id: projectOrId }, include: ANALYTICS_PROJECT_INCLUDE })
+      : projectOrId;
 
-  const groupMembers = await prisma.groupMembership.findMany({
-    where: { groupId: project.groupId },
-    include: { user: true },
-  });
-
-  const memberships = await prisma.organisationMembership.findMany({
-    where: {
-      organisationId: project.group.organisationId,
-      userId: { in: groupMembers.map((m) => m.userId) },
-    },
-  });
-  const membershipByUser = new Map(memberships.map((m) => [m.userId, m]));
-
+  // Everything below only needs the project, so it's fetched in one parallel
+  // round trip instead of four sequential ones.
   const checkpointIds = project.checkpoints.map((c) => c.id);
-  const allProgress = await prisma.checkpointProgress.findMany({
-    where: { checkpointId: { in: checkpointIds } },
-  });
+  const [groupMembers, memberships, allProgress, pendingVerifications] = await Promise.all([
+    prisma.groupMembership.findMany({
+      where: { groupId: project.groupId },
+      include: { user: true },
+    }),
+    prisma.organisationMembership.findMany({
+      where: {
+        organisationId: project.group.organisationId,
+        user: { groupMemberships: { some: { groupId: project.groupId } } },
+      },
+    }),
+    prisma.checkpointProgress.findMany({
+      where: { checkpointId: { in: checkpointIds } },
+    }),
+    prisma.checkpointSubmission.count({
+      where: { checkpointId: { in: checkpointIds }, status: "PENDING" },
+    }),
+  ]);
+  const membershipByUser = new Map(memberships.map((m) => [m.userId, m]));
 
   const students: StudentProgressRow[] = [];
   const completedCountByCheckpoint = new Map(checkpointIds.map((id) => [id, 0]));
@@ -112,10 +131,6 @@ export async function getProjectAnalytics(projectId: string, now: Date = new Dat
     if (!worst || row.pct < worst.pct) return row;
     return worst;
   }, null);
-
-  const pendingVerifications = await prisma.checkpointSubmission.count({
-    where: { checkpointId: { in: checkpointIds }, status: "PENDING" },
-  });
 
   const overallPct =
     students.length === 0

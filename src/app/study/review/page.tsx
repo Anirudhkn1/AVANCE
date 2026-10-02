@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { requireSessionUser } from "@/lib/session";
+import { requireSessionUserId } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { StudyReviewSession } from "@/components/study-review-session";
 
 export default async function StudyReviewPage() {
-  const user = await requireSessionUser();
+  const userId = await requireSessionUserId();
 
   const cards = await prisma.flashcard.findMany({
-    where: { deck: { userId: user.id }, dueDate: { lte: new Date() } },
+    where: { deck: { userId: userId }, dueDate: { lte: new Date() } },
     include: { deck: true },
     orderBy: { dueDate: "asc" },
   });

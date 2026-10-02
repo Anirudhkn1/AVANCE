@@ -9,6 +9,10 @@
 
 generator client {
   provider = "prisma-client-js"
+  // Loads `include`d relations in the same SQL query (LATERAL JOIN) instead of
+  // one extra query per relation — each of those was a full round trip to
+  // the remote database.
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -52,6 +56,13 @@ model User {
   createdOrgs      Organisation[]
   createdGroups    Group[]
   createdProjects  Project[]
+
+  adminOfSchools     School[]           @relation("SchoolAdmin")
+  schoolStaff        SchoolStaff[]
+  classroomTeaching  ClassroomTeacher[]
+  ownedSubjects      Subject[]
+  kidProfiles        KidProfile[]
+  schoolAnnouncements Announcement[]
 }
 
 // ---------------------------------------------------------------------------
@@ -413,4 +424,181 @@ model AuditLog {
   createdAt  DateTime @default(now())
 
   actor User @relation("AuditActor", fields: [actorId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// School (kids) section — School -> Classroom -> Subject -> Homework.
+// Kept apart from the college Organisation tables. Kids are profiles owned
+// by the parent's login, not auth users. Deliberately no history/audit
+// tables here: child rows cascade away with their parents.
+// ---------------------------------------------------------------------------
+
+model School {
+  id          String   @id @default(cuid())
+  name        String
+  staffCode   String   @unique
+  studentCode String   @unique
+  adminId     String
+  createdAt   DateTime @default(now())
+
+  admin         User           @relation("SchoolAdmin", fields: [adminId], references: [id])
+  staff         SchoolStaff[]
+  classrooms    Classroom[]
+  kids          KidProfile[]
+  announcements Announcement[]
+}
+
+// SchoolStaffStatus: "PENDING" | "APPROVED"
+model SchoolStaff {
+  id          String   @id @default(cuid())
+  schoolId    String
+  userId      String   @unique // one school per staff account
+  status      String   @default("PENDING")
+  canAnnounce Boolean  @default(false) // may post school-level announcements
+  createdAt   DateTime @default(now())
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Classroom {
+  id          String   @id @default(cuid())
+  schoolId    String
+  name        String
+  joinCode    String   @unique
+  createdById String
+  createdAt   DateTime @default(now())
+
+  school        School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  teachers      ClassroomTeacher[]
+  subjects      Subject[]
+  kids          KidProfile[]
+  announcements Announcement[]
+  timetable     Timetable?
+
+  @@unique([schoolId, name])
+}
+
+model ClassroomTeacher {
+  id          String @id @default(cuid())
+  classroomId String
+  userId      String
+
+  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([classroomId, userId])
+}
+
+model Subject {
+  id          String   @id @default(cuid())
+  classroomId String
+  name        String
+  ownerId     String? // null after the teacher leaves — the next teacher claims it
+  createdAt   DateTime @default(now())
+
+  classroom     Classroom      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  owner         User?          @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  homework      Homework[]
+  notes         TeachingNote[]
+  announcements Announcement[]
+
+  @@unique([classroomId, name])
+}
+
+// KidClassroomStatus: "PENDING" | "APPROVED"
+model KidProfile {
+  id              String   @id @default(cuid())
+  ownerId         String
+  name            String
+  avatarSeed      String
+  xp              Int      @default(0)
+  schoolId        String?
+  classroomId     String?
+  classroomStatus String?
+  createdAt       DateTime @default(now())
+
+  owner       User                 @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  school      School?              @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  classroom   Classroom?           @relation(fields: [classroomId], references: [id], onDelete: SetNull)
+  completions HomeworkCompletion[]
+}
+
+model Homework {
+  id          String   @id @default(cuid())
+  subjectId   String
+  title       String
+  description String   @default("")
+  dueDate     DateTime // end of the due day, IST
+  createdAt   DateTime @default(now())
+
+  subject     Subject              @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  completions HomeworkCompletion[]
+}
+
+model HomeworkCompletion {
+  id          String   @id @default(cuid())
+  homeworkId  String
+  kidId       String
+  completedAt DateTime @default(now())
+  late        Boolean  @default(false)
+
+  homework Homework   @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  kid      KidProfile @relation(fields: [kidId], references: [id], onDelete: Cascade)
+
+  @@unique([homeworkId, kidId])
+  @@index([kidId, completedAt])
+}
+
+// classroomId null = school-level announcement
+model Announcement {
+  id             String   @id @default(cuid())
+  schoolId       String
+  classroomId    String?
+  subjectId      String?
+  authorId       String
+  body           String
+  attachmentPath String?
+  attachmentName String?
+  createdAt      DateTime @default(now())
+
+  school    School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classroom Classroom? @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  subject   Subject?   @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, createdAt])
+}
+
+model TeachingNote {
+  id        String   @id @default(cuid())
+  subjectId String
+  day       String // "YYYY-MM-DD" in IST
+  body      String
+  updatedAt DateTime @updatedAt
+
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([subjectId, day])
+}
+
+model Timetable {
+  id          String   @id @default(cuid())
+  classroomId String   @unique
+  path        String
+  fileName    String
+  uploadedAt  DateTime @default(now())
+
+  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+}
+
+// Drives the "new" dots: one row per (viewer, section), overwritten on visit.
+// viewer = "kid:<id>" | "user:<id>"; section = "announcements" | "subject:<id>"
+model SeenMarker {
+  id      String   @id @default(cuid())
+  viewer  String
+  section String
+  seenAt  DateTime @default(now())
+
+  @@unique([viewer, section])
 }

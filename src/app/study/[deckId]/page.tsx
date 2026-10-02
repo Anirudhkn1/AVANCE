@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { requireSessionUser } from "@/lib/session";
+import { requireSessionUserId } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { createFlashcardAction } from "@/actions/study";
 import { Card, SectionHeading, Badge, EmptyState } from "@/components/ui";
@@ -8,14 +8,14 @@ import { SubmitForm } from "@/components/forms";
 import { DeleteFlashcardButton } from "@/components/study-controls";
 
 export default async function DeckPage({ params }: { params: Promise<{ deckId: string }> }) {
-  const user = await requireSessionUser();
+  const userId = await requireSessionUserId();
   const { deckId } = await params;
 
   const deck = await prisma.deck.findUnique({
     where: { id: deckId },
     include: { cards: { orderBy: { createdAt: "asc" } } },
   });
-  if (!deck || deck.userId !== user.id) notFound();
+  if (!deck || deck.userId !== userId) notFound();
 
   const createCardAction = createFlashcardAction.bind(null, deck.id);
   const today = new Date();

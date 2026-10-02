@@ -80,6 +80,11 @@ export function AppBackground() {
           // MSAA is a real per-frame GPU cost that buys nothing at 2.5%
           // opacity — nobody can see the jaggies it would otherwise smooth.
           antialias={false}
+          // Same reasoning: at 2.5% opacity, 1x resolution and 30fps are
+          // indistinguishable from full DPR at the display's refresh rate,
+          // for a fraction of the GPU time on every signed-in page.
+          maxPixelRatio={1}
+          maxFps={30}
         />
       </BackgroundErrorBoundary>
     </div>

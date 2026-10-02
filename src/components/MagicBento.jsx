@@ -345,8 +345,20 @@ const GlobalSpotlight = ({
     document.body.appendChild(spotlight);
     spotlightRef.current = spotlight;
 
+    // mousemove can fire several times per frame (high-polling mice); each
+    // pass reads every card's layout and starts tweens, so only run the
+    // latest event once per animation frame.
+    let pendingEvent = null;
+    let frame = 0;
     const handleMouseMove = (e) => {
-      if (!spotlightRef.current || !gridRef.current) return;
+      pendingEvent = e;
+      if (!frame) frame = requestAnimationFrame(flushMouseMove);
+    };
+
+    const flushMouseMove = () => {
+      frame = 0;
+      const e = pendingEvent;
+      if (!e || !spotlightRef.current || !gridRef.current) return;
 
       const section = gridRef.current.closest(".magic-bento-section");
       const rect = section?.getBoundingClientRect();
@@ -401,6 +413,8 @@ const GlobalSpotlight = ({
     };
 
     const handleMouseLeave = () => {
+      cancelAnimationFrame(frame);
+      frame = 0;
       gridRef.current?.querySelectorAll(".magic-bento-card").forEach((card) => {
         card.style.setProperty("--glow-intensity", "0");
       });
@@ -415,6 +429,7 @@ const GlobalSpotlight = ({
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseleave", handleMouseLeave);
+      cancelAnimationFrame(frame);
       spotlightRef.current?.parentNode?.removeChild(spotlightRef.current);
     };
   }, [gridRef, disableAnimations, enabled, spotlightRadius, glowColor]);

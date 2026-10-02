@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { requireSessionUser } from "@/lib/session";
+import { requireSessionUserId } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { Card, EmptyState, LinkButton } from "@/components/ui";
 
 export default async function LeaderboardChooserPage() {
-  const user = await requireSessionUser();
+  const userId = await requireSessionUserId();
   const memberships = await prisma.organisationMembership.findMany({
-    where: { userId: user.id },
+    where: { userId: userId },
     include: { organisation: true },
   });
 

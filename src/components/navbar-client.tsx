@@ -34,10 +34,12 @@ import {
   UserIcon,
 } from "@/components/nav-icons";
 
+type NavItem = { href: string; label: string; icon: typeof HomeIcon; match: string[] };
+
 // Organisations/Habits/To-Do/Focus/Study are reached via the tiles on the
 // /dashboard itself, so they stay out of the nav — but they light up "Home",
 // since that's where you opened them from.
-const NAV_ITEMS = [
+const NAV_ITEMS: NavItem[] = [
   {
     href: "/dashboard",
     label: "Home",
@@ -48,12 +50,46 @@ const NAV_ITEMS = [
   { href: "/profile", label: "Profile", icon: UserIcon, match: ["/profile"] },
 ];
 
+// Inside the School section the same three slots point at that profile's
+// own pages: a kid's (URL carries the kid id) or the staff side.
+function getNavItems(pathname: string): NavItem[] {
+  const kid = pathname.match(/^\/school\/kid\/([^/]+)/);
+  if (kid) {
+    const base = `/school/kid/${kid[1]}`;
+    return [
+      { href: base, label: "Home", icon: HomeIcon, match: [base] },
+      { href: `${base}/leaderboard`, label: "Leaderboard", icon: TrophyIcon, match: [`${base}/leaderboard`] },
+      { href: `${base}/profile`, label: "Profile", icon: UserIcon, match: [`${base}/profile`] },
+    ];
+  }
+  if (pathname.startsWith("/school/staff")) {
+    return [
+      { href: "/school/staff", label: "Home", icon: HomeIcon, match: ["/school/staff"] },
+      { href: "/school/staff/leaderboard", label: "Leaderboard", icon: TrophyIcon, match: ["/school/staff/leaderboard"] },
+      { href: "/profile", label: "Profile", icon: UserIcon, match: ["/profile"] },
+    ];
+  }
+  return NAV_ITEMS;
+}
+
 function isUnder(pathname: string, prefix: string) {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
 
-function findActiveIndex(pathname: string) {
-  return NAV_ITEMS.findIndex((item) => item.match.some((prefix) => isUnder(pathname, prefix)));
+// Longest matching prefix wins, so /school/kid/x/leaderboard lights
+// "Leaderboard" rather than the kid's "Home".
+function findActiveIndex(items: NavItem[], pathname: string) {
+  let best = -1;
+  let bestLength = -1;
+  items.forEach((item, index) => {
+    for (const prefix of item.match) {
+      if (isUnder(pathname, prefix) && prefix.length > bestLength) {
+        best = index;
+        bestLength = prefix.length;
+      }
+    }
+  });
+  return best;
 }
 
 // Plain left click only — a cmd/ctrl/shift click opens a new tab, and the
@@ -69,7 +105,7 @@ function isPlainClick(e: MouseEvent) {
  * soon as the pathname changes (adjusting state during render, not in an
  * effect: https://react.dev/learn/you-might-not-need-an-effect).
  */
-function useActiveIndex() {
+function useActiveIndex(items: NavItem[]) {
   const pathname = usePathname();
   const [pending, setPending] = useState<number | null>(null);
   const [seenPathname, setSeenPathname] = useState(pathname);
@@ -77,7 +113,7 @@ function useActiveIndex() {
     setSeenPathname(pathname);
     setPending(null);
   }
-  return [pending ?? findActiveIndex(pathname), setPending] as const;
+  return [pending ?? findActiveIndex(items, pathname), setPending] as const;
 }
 
 type Travel = "snap" | "forward" | "back";
@@ -202,7 +238,8 @@ export function NavShell({ children }: { children: ReactNode }) {
 
 /** Desktop links: inchworm active pill, plus a soft ghost pill that follows the pointer. */
 export function NavLinks() {
-  const [active, setActive] = useActiveIndex();
+  const items = getNavItems(usePathname());
+  const [active, setActive] = useActiveIndex(items);
   const { trackRef, blobRef } = useIndicator(active);
   const ghostRef = useRef<HTMLSpanElement>(null);
   const ghostIndexRef = useRef(-1);
@@ -227,7 +264,7 @@ export function NavLinks() {
       <div ref={trackRef} className="nav-links__track" onPointerLeave={hideGhost}>
         <span ref={ghostRef} className="nav-blob nav-blob--ghost" aria-hidden />
         <span ref={blobRef} className="nav-blob nav-blob--active" aria-hidden />
-        {NAV_ITEMS.map((item, index) => {
+        {items.map((item, index) => {
           const isActive = index === active;
           return (
             <Link
@@ -253,14 +290,15 @@ export function NavLinks() {
 
 /** Mobile: a floating dock at the bottom of the screen, within thumb reach. */
 export function MobileDock() {
-  const [active, setActive] = useActiveIndex();
+  const items = getNavItems(usePathname());
+  const [active, setActive] = useActiveIndex(items);
   const { trackRef, blobRef } = useIndicator(active);
 
   return (
     <nav aria-label="Primary" className="nav-dock">
       <div ref={trackRef} className="nav-dock__track">
         <span ref={blobRef} className="nav-blob nav-blob--active" aria-hidden />
-        {NAV_ITEMS.map((item, index) => {
+        {items.map((item, index) => {
           const isActive = index === active;
           return (
             <Link
@@ -319,6 +357,7 @@ export function AccountMenu({ name, avatar }: { name: string | null; avatar: Rea
   }, [open]);
 
   const links = [
+    { href: "/profiles", label: "Switch profile", icon: UserIcon },
     { href: "/profile", label: "Your profile", icon: UserIcon },
     { href: "/profile/avatar", label: "Customize avatar", icon: SmileIcon },
     { href: "/notifications", label: "Notifications", icon: BellIcon },

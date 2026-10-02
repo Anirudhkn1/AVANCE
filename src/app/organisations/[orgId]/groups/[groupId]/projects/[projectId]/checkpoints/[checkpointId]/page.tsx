@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { requireSessionUser } from "@/lib/session";
+import { requireSessionUserId } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { requireMembership, canManageGroups, isGroupMember } from "@/lib/permissions";
 import { getCheckpointStates } from "@/lib/progress";
@@ -14,14 +14,15 @@ export default async function CheckpointPage({
   params: Promise<{ orgId: string; groupId: string; projectId: string; checkpointId: string }>;
 }) {
   const { orgId, groupId, projectId, checkpointId } = await params;
-  const user = await requireSessionUser();
-  const membership = await requireMembership(user.id, orgId).catch(() => null);
+  const userId = await requireSessionUserId();
+  const [membership, checkpoint] = await Promise.all([
+    requireMembership(userId, orgId).catch(() => null),
+    prisma.checkpoint.findUnique({
+      where: { id: checkpointId },
+      include: { project: { include: { group: true, checkpoints: { orderBy: { order: "asc" } } } } },
+    }),
+  ]);
   if (!membership) notFound();
-
-  const checkpoint = await prisma.checkpoint.findUnique({
-    where: { id: checkpointId },
-    include: { project: { include: { group: true, checkpoints: { orderBy: { order: "asc" } } } } },
-  });
   if (!checkpoint || checkpoint.projectId !== projectId || checkpoint.project.groupId !== groupId || checkpoint.project.group.organisationId !== orgId) {
     notFound();
   }
@@ -30,20 +31,23 @@ export default async function CheckpointPage({
   const backHref = `/organisations/${orgId}/groups/${groupId}/projects/${projectId}`;
 
   if (isHost) {
-    const groupMembers = await prisma.groupMembership.findMany({ where: { groupId }, include: { user: true } });
-    const studentMemberships = await prisma.organisationMembership.findMany({
-      where: { organisationId: orgId, role: "STUDENT", userId: { in: groupMembers.map((m) => m.userId) } },
-    });
+    // All four only need ids from the URL, so they share one round trip.
+    const [groupMembers, studentMemberships, submissions, progressRows] = await Promise.all([
+      prisma.groupMembership.findMany({ where: { groupId }, include: { user: true } }),
+      prisma.organisationMembership.findMany({
+        where: { organisationId: orgId, role: "STUDENT", user: { groupMemberships: { some: { groupId } } } },
+      }),
+      prisma.checkpointSubmission.findMany({
+        where: { checkpointId },
+        orderBy: { submittedAt: "desc" },
+      }),
+      prisma.checkpointProgress.findMany({ where: { checkpointId } }),
+    ]);
     const studentIds = new Set(studentMemberships.map((m) => m.userId));
 
-    const submissions = await prisma.checkpointSubmission.findMany({
-      where: { checkpointId },
-      orderBy: { submittedAt: "desc" },
-    });
     const latestByUser = new Map<string, (typeof submissions)[number]>();
     for (const s of submissions) if (!latestByUser.has(s.userId)) latestByUser.set(s.userId, s);
 
-    const progressRows = await prisma.checkpointProgress.findMany({ where: { checkpointId } });
     const completedByUser = new Map(progressRows.map((p) => [p.userId, p.completed]));
 
     return (
@@ -108,20 +112,23 @@ export default async function CheckpointPage({
   }
 
   // --- Student view ---------------------------------------------------
-  if (!(await isGroupMember(user.id, groupId))) notFound();
-
   const allCheckpoints = checkpoint.project.checkpoints;
-  const progress = await prisma.checkpointProgress.findMany({
-    where: { userId: user.id, checkpointId: { in: allCheckpoints.map((c) => c.id) } },
-  });
+  // Only the viewer's own rows, so they can load alongside the membership check.
+  const [memberOfGroup, progress, submissions] = await Promise.all([
+    isGroupMember(userId, groupId),
+    prisma.checkpointProgress.findMany({
+      where: { userId, checkpointId: { in: allCheckpoints.map((c) => c.id) } },
+    }),
+    prisma.checkpointSubmission.findMany({
+      where: { checkpointId, userId },
+      orderBy: { submittedAt: "desc" },
+    }),
+  ]);
+  if (!memberOfGroup) notFound();
   const completedIds = new Set(progress.filter((p) => p.completed).map((p) => p.checkpointId));
   const states = getCheckpointStates(allCheckpoints, completedIds);
   const state = states.get(checkpointId)!;
 
-  const submissions = await prisma.checkpointSubmission.findMany({
-    where: { checkpointId, userId: user.id },
-    orderBy: { submittedAt: "desc" },
-  });
   const latest = submissions[0];
 
   return (

@@ -1,4 +1,4 @@
-import { requireSessionUser } from "@/lib/session";
+import { requireSessionUserId } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { createTodoAction } from "@/actions/todos";
 import { formatDate } from "@/lib/format";
@@ -7,10 +7,10 @@ import { SubmitForm } from "@/components/forms";
 import { ToggleTodoButton, DeleteTodoButton } from "@/components/todo-controls";
 
 export default async function TodosPage() {
-  const user = await requireSessionUser();
+  const userId = await requireSessionUserId();
 
   const todos = await prisma.todo.findMany({
-    where: { userId: user.id },
+    where: { userId: userId },
     orderBy: [{ done: "asc" }, { dueDate: "asc" }, { createdAt: "asc" }],
   });
   const open = todos.filter((t) => !t.done);
