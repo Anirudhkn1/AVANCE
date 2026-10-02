@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation";
+import { after } from "next/server";
 import Link from "next/link";
-import { requireSessionUser } from "@/lib/session";
+import { requireSessionUserId } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { requireMembership, canManageGroups, isGroupMember } from "@/lib/permissions";
 import { getCompletedCount } from "@/lib/progress";
 import { computeRisk } from "@/lib/risk";
-import { getProjectAnalytics } from "@/lib/analytics";
+import { getProjectAnalytics, ANALYTICS_PROJECT_INCLUDE } from "@/lib/analytics";
 import { sweepExpiredProjects, purgeReviewedUploads } from "@/lib/retention";
 import { formatTimeRemaining } from "@/lib/format";
 import { Card, SectionHeading, Badge, EmptyState, LinkButton, Avatar } from "@/components/ui";
@@ -15,30 +16,40 @@ import { QuestPath } from "@/components/quest-path";
 
 export default async function GroupPage({ params }: { params: Promise<{ orgId: string; groupId: string }> }) {
   const { orgId, groupId } = await params;
-  const user = await requireSessionUser();
-  const membership = await requireMembership(user.id, orgId).catch(() => null);
+  const userId = await requireSessionUserId();
+  // Archives expired projects, so it must finish before projects are read —
+  // started first so it overlaps the access checks. Housekeeping only: a
+  // failure is logged rather than breaking the page.
+  const swept = sweepExpiredProjects(groupId).catch((err) => console.error("sweepExpiredProjects failed:", err));
+  // Independent lookups — one round trip instead of three.
+  const [membership, group, memberOfGroup] = await Promise.all([
+    requireMembership(userId, orgId).catch(() => null),
+    prisma.group.findUnique({ where: { id: groupId }, include: { organisation: true } }),
+    isGroupMember(userId, groupId),
+  ]);
   if (!membership) notFound();
-
-  const group = await prisma.group.findUnique({ where: { id: groupId }, include: { organisation: true } });
   if (!group || group.organisationId !== orgId) notFound();
 
   const isHost = canManageGroups(membership.role);
-  const memberOfGroup = await isGroupMember(user.id, groupId);
-
-  await sweepExpiredProjects(groupId);
 
   if (isHost) {
-    await purgeReviewedUploads();
+    // Storage housekeeping doesn't affect this page, so it runs after the
+    // response is sent instead of holding up the render.
+    after(() => purgeReviewedUploads().catch((err) => console.error("purgeReviewedUploads failed:", err)));
 
-    const projects = await prisma.project.findMany({
-      where: { groupId },
-      orderBy: { createdAt: "desc" },
-      include: { checkpoints: true },
-    });
-    const memberCount = await prisma.groupMembership.count({ where: { groupId } });
+    const [projects, memberCount] = await Promise.all([
+      swept.then(() =>
+        prisma.project.findMany({
+          where: { groupId },
+          orderBy: { createdAt: "desc" },
+          include: ANALYTICS_PROJECT_INCLUDE,
+        })
+      ),
+      prisma.groupMembership.count({ where: { groupId } }),
+    ]);
 
     const publishedAnalytics = await Promise.all(
-      projects.filter((p) => p.status === "PUBLISHED").map((p) => getProjectAnalytics(p.id))
+      projects.filter((p) => p.status === "PUBLISHED").map((p) => getProjectAnalytics(p))
     );
     const analyticsByProject = new Map(
       projects.filter((p) => p.status === "PUBLISHED").map((p, i) => [p.id, publishedAnalytics[i]])
@@ -110,6 +121,7 @@ export default async function GroupPage({ params }: { params: Promise<{ orgId: s
   }
 
   // --- Student view ---------------------------------------------------
+  await swept;
   if (!memberOfGroup) {
     return (
       <div className="mx-auto max-w-lg w-full px-4 py-16">
@@ -124,11 +136,25 @@ export default async function GroupPage({ params }: { params: Promise<{ orgId: s
     );
   }
 
-  const project = await prisma.project.findFirst({
-    where: { groupId, status: "PUBLISHED" },
-    orderBy: { publishedAt: "desc" },
-    include: { checkpoints: { orderBy: { order: "asc" } } },
-  });
+  const [project, topStudents, recentActivity] = await Promise.all([
+    prisma.project.findFirst({
+      where: { groupId, status: "PUBLISHED" },
+      orderBy: { publishedAt: "desc" },
+      include: { checkpoints: { orderBy: { order: "asc" } } },
+    }),
+    prisma.organisationMembership.findMany({
+      where: { organisationId: orgId, role: "STUDENT", user: { groupMemberships: { some: { groupId } } } },
+      include: { user: true },
+      orderBy: { xp: "desc" },
+      take: 5,
+    }),
+    prisma.activityEvent.findMany({
+      where: { groupId },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: { user: true, reactions: true },
+    }),
+  ]);
 
   if (!project) {
     return (
@@ -141,7 +167,7 @@ export default async function GroupPage({ params }: { params: Promise<{ orgId: s
   }
 
   const progress = await prisma.checkpointProgress.findMany({
-    where: { userId: user.id, checkpointId: { in: project.checkpoints.map((c) => c.id) } },
+    where: { userId, checkpointId: { in: project.checkpoints.map((c) => c.id) } },
   });
   const completedIds = new Set(progress.filter((p) => p.completed).map((p) => p.checkpointId));
   const completedCount = getCompletedCount(completedIds, project.checkpoints.map((c) => c.id));
@@ -151,20 +177,6 @@ export default async function GroupPage({ params }: { params: Promise<{ orgId: s
     startedAt: project.publishedAt ?? project.createdAt,
     deadline: project.deadline,
     lastActivityAt: membership.lastActivityAt,
-  });
-
-  const topStudents = await prisma.organisationMembership.findMany({
-    where: { organisationId: orgId, role: "STUDENT", user: { groupMemberships: { some: { groupId } } } },
-    include: { user: true },
-    orderBy: { xp: "desc" },
-    take: 5,
-  });
-
-  const recentActivity = await prisma.activityEvent.findMany({
-    where: { groupId },
-    orderBy: { createdAt: "desc" },
-    take: 10,
-    include: { user: true, reactions: true },
   });
 
   return (
@@ -209,7 +221,7 @@ export default async function GroupPage({ params }: { params: Promise<{ orgId: s
 
         <Card>
           <SectionHeading title="Recent activity" />
-          <ActivityFeed events={recentActivity} currentUserId={user.id} />
+          <ActivityFeed events={recentActivity} currentUserId={userId} />
         </Card>
       </div>
     </div>

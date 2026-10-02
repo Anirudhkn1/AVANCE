@@ -1,26 +1,26 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { requireSessionUser } from "@/lib/session";
+import { requireSessionUserId } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { requireOrgRole } from "@/lib/permissions";
-import { getProjectAnalytics } from "@/lib/analytics";
+import { getProjectAnalytics, ANALYTICS_PROJECT_INCLUDE } from "@/lib/analytics";
 import { formatDate } from "@/lib/format";
 import { Card, SectionHeading, ProgressBar, StatTile, RiskBadge, EmptyState, LinkButton, Avatar } from "@/components/ui";
 
 export default async function CommandCenterPage({ params }: { params: Promise<{ orgId: string }> }) {
   const { orgId } = await params;
-  const user = await requireSessionUser();
+  const userId = await requireSessionUserId();
 
-  try {
-    await requireOrgRole(user.id, orgId, ["HEAD", "HOST"]);
-  } catch {
-    notFound();
-  }
-
-  const [org, groups] = await Promise.all([
-    prisma.organisation.findUniqueOrThrow({ where: { id: orgId } }),
+  // The role check runs alongside the reads; nothing is shown unless it passes.
+  const [allowed, org, groups] = await Promise.all([
+    requireOrgRole(userId, orgId, ["HEAD", "HOST"]).then(
+      () => true,
+      () => false
+    ),
+    prisma.organisation.findUnique({ where: { id: orgId } }),
     prisma.group.findMany({ where: { organisationId: orgId } }),
   ]);
+  if (!allowed || !org) notFound();
 
   // Each group's analytics starts as soon as its own project lookup
   // resolves, instead of waiting for every group's lookup first.
@@ -29,8 +29,9 @@ export default async function CommandCenterPage({ params }: { params: Promise<{ 
       const project = await prisma.project.findFirst({
         where: { groupId: g.id, status: "PUBLISHED" },
         orderBy: { publishedAt: "desc" },
+        include: ANALYTICS_PROJECT_INCLUDE,
       });
-      return { project, analytics: project ? await getProjectAnalytics(project.id) : null };
+      return { project, analytics: project ? await getProjectAnalytics(project) : null };
     })
   );
   const rows = groups.map((g, i) => ({ group: g, ...rowsData[i] }));

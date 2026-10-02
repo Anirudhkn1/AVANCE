@@ -1,4 +1,4 @@
-import { requireSessionUser } from "@/lib/session";
+import { requireSessionUserId } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { summarizeFocusSessions, formatDuration } from "@/lib/focus";
 import { formatDateTime } from "@/lib/format";
@@ -6,10 +6,10 @@ import { Card, SectionHeading, StatTile, Badge, EmptyState } from "@/components/
 import { FocusTimer } from "@/components/focus-timer";
 
 export default async function FocusPage() {
-  const user = await requireSessionUser();
+  const userId = await requireSessionUserId();
 
   const sessions = await prisma.focusSession.findMany({
-    where: { userId: user.id, endedAt: { not: null } },
+    where: { userId, endedAt: { not: null } },
     orderBy: { startedAt: "desc" },
     take: 200,
   });

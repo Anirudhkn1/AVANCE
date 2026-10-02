@@ -326,6 +326,10 @@ const PixelBlast = ({
   rippleSpeed = 0.3,
   liquidWobbleSpeed = 4.5,
   autoPauseOffscreen = true,
+  // Local additions: caps on render resolution and frame rate, for callers
+  // where the effect is faint enough that full DPR / refresh rate is wasted.
+  maxPixelRatio = 2,
+  maxFps = 0,
   speed = 0.5,
   transparent = true,
   edgeFade = 0.5,
@@ -341,8 +345,8 @@ const PixelBlast = ({
     const container = containerRef.current;
     if (!container) return;
     speedRef.current = speed;
-    const needsReinitKeys = ['antialias', 'liquid', 'noiseAmount'];
-    const cfg = { antialias, liquid, noiseAmount };
+    const needsReinitKeys = ['antialias', 'liquid', 'noiseAmount', 'maxPixelRatio', 'maxFps'];
+    const cfg = { antialias, liquid, noiseAmount, maxPixelRatio, maxFps };
     let mustReinit = false;
     if (!threeRef.current) mustReinit = true;
     else if (prevConfigRef.current) {
@@ -356,7 +360,7 @@ const PixelBlast = ({
       if (threeRef.current) {
         const t = threeRef.current;
         t.resizeObserver?.disconnect();
-        cancelAnimationFrame(t.raf);
+        t.stop();
         t.quad?.geometry.dispose();
         t.material.dispose();
         t.composer?.dispose();
@@ -374,7 +378,7 @@ const PixelBlast = ({
       });
       renderer.domElement.style.width = '100%';
       renderer.domElement.style.height = '100%';
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxPixelRatio));
       container.appendChild(renderer.domElement);
       if (transparent) renderer.setClearAlpha(0);
       else renderer.setClearColor(0x000000, 1);
@@ -503,11 +507,20 @@ const PixelBlast = ({
         passive: true
       });
       let raf = 0;
-      const animate = () => {
+      let stopped = false;
+      const minFrameMs = maxFps > 0 ? 1000 / maxFps : 0;
+      let lastFrame = 0;
+      const animate = now => {
+        if (stopped) return;
         if (autoPauseOffscreen && !visibilityRef.current.visible) {
           raf = requestAnimationFrame(animate);
           return;
         }
+        if (minFrameMs && now - lastFrame < minFrameMs - 1) {
+          raf = requestAnimationFrame(animate);
+          return;
+        }
+        lastFrame = now;
         uniforms.uTime.value = timeOffset + clock.getElapsedTime() * speedRef.current;
         if (liquidEffect) liquidEffect.uniforms.get('uTime').value = uniforms.uTime.value;
         if (composer) {
@@ -534,7 +547,12 @@ const PixelBlast = ({
         clickIx: 0,
         uniforms,
         resizeObserver: ro,
-        raf,
+        // `raf` changes every frame, so cancelling a stored id would only
+        // cancel the first one and leave the loop running after unmount.
+        stop: () => {
+          stopped = true;
+          cancelAnimationFrame(raf);
+        },
         quad,
         timeOffset,
         composer,
@@ -570,7 +588,7 @@ const PixelBlast = ({
       if (!threeRef.current) return;
       const t = threeRef.current;
       t.resizeObserver?.disconnect();
-      cancelAnimationFrame(t.raf);
+      t.stop();
       t.quad?.geometry.dispose();
       t.material.dispose();
       t.composer?.dispose();
@@ -597,6 +615,8 @@ const PixelBlast = ({
     liquidRadius,
     liquidWobbleSpeed,
     autoPauseOffscreen,
+    maxPixelRatio,
+    maxFps,
     variant,
     color,
     speed

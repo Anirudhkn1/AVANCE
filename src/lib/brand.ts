@@ -26,7 +26,6 @@ export const MARK_FRAME_PATHS = [
 export const BRAND_TAGLINE = "A game layer for real-world work";
 
 // sessionStorage key + <html data-intro> contract shared by the inline
-// pre-paint script (layout.tsx), the intro overlay, and the hero ParticleText.
+// pre-paint script (layout.tsx) and the intro overlay.
 export const INTRO_STORAGE_KEY = "avance:intro-played";
 export const INTRO_DONE_EVENT = "avance:intro-done";
-export const PARTICLES_READY_EVENT = "avance:particles-ready";

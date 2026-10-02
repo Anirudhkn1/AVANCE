@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireSessionUser } from "@/lib/session";
+import { requireSessionUserId } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { requireMembership } from "@/lib/permissions";
 import { getCompletedCount } from "@/lib/progress";
@@ -15,9 +15,9 @@ export default async function LeaderboardPage({
 }) {
   const { orgId } = await params;
   const { group: groupIdParam } = await searchParams;
-  const user = await requireSessionUser();
+  const userId = await requireSessionUserId();
   const [membership, org, groups] = await Promise.all([
-    requireMembership(user.id, orgId).catch(() => null),
+    requireMembership(userId, orgId).catch(() => null),
     prisma.organisation.findUnique({ where: { id: orgId } }),
     prisma.group.findMany({ where: { organisationId: orgId }, orderBy: { createdAt: "asc" } }),
   ]);

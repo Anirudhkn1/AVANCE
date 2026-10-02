@@ -1,14 +1,14 @@
 import { notFound } from "next/navigation";
-import { requireSessionUser } from "@/lib/session";
+import { requireSessionUserId } from "@/lib/session";
 import { requireGroupHost } from "@/lib/permissions";
 import { QuestBuilderWizard } from "@/components/quest-builder-wizard";
 
 export default async function NewProjectPage({ params }: { params: Promise<{ orgId: string; groupId: string }> }) {
   const { orgId, groupId } = await params;
-  const user = await requireSessionUser();
+  const userId = await requireSessionUserId();
 
   try {
-    await requireGroupHost(user.id, groupId);
+    await requireGroupHost(userId, groupId);
   } catch {
     notFound();
   }

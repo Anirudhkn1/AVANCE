@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { requireSessionUser } from "@/lib/session";
+import { requireSessionUserId } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { requireMembership, canManageGroups, isGroupMember } from "@/lib/permissions";
 import { getCompletedCount } from "@/lib/progress";
 import { computeRisk } from "@/lib/risk";
-import { getProjectAnalytics } from "@/lib/analytics";
+import { getProjectAnalytics, ANALYTICS_PROJECT_INCLUDE } from "@/lib/analytics";
 import { formatDate } from "@/lib/format";
 import { Card, SectionHeading, Badge, ProgressBar, StatTile, RiskBadge, EmptyState, LinkButton, Avatar } from "@/components/ui";
 import { QuestPath } from "@/components/quest-path";
@@ -16,25 +16,28 @@ export default async function ProjectPage({
   params: Promise<{ orgId: string; groupId: string; projectId: string }>;
 }) {
   const { orgId, groupId, projectId } = await params;
-  const user = await requireSessionUser();
-  const membership = await requireMembership(user.id, orgId).catch(() => null);
+  const userId = await requireSessionUserId();
+  const [membership, project] = await Promise.all([
+    requireMembership(userId, orgId).catch(() => null),
+    prisma.project.findUnique({
+      where: { id: projectId },
+      include: ANALYTICS_PROJECT_INCLUDE,
+    }),
+  ]);
   if (!membership) notFound();
-
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    include: { checkpoints: { orderBy: { order: "asc" } }, group: true },
-  });
   if (!project || project.groupId !== groupId || project.group.organisationId !== orgId) notFound();
 
   const isHost = canManageGroups(membership.role);
 
   if (isHost) {
-    const analytics = await getProjectAnalytics(projectId);
-    const pendingSubmissions = await prisma.checkpointSubmission.findMany({
-      where: { checkpoint: { projectId }, status: "PENDING" },
-      include: { user: true, checkpoint: true },
-      orderBy: { submittedAt: "asc" },
-    });
+    const [analytics, pendingSubmissions] = await Promise.all([
+      getProjectAnalytics(project),
+      prisma.checkpointSubmission.findMany({
+        where: { checkpoint: { projectId }, status: "PENDING" },
+        include: { user: true, checkpoint: true },
+        orderBy: { submittedAt: "asc" },
+      }),
+    ]);
 
     return (
       <div className="mx-auto max-w-5xl w-full px-4 py-8 space-y-8">
@@ -137,11 +140,15 @@ export default async function ProjectPage({
   }
 
   // --- Student view ---------------------------------------------------
-  if (!(await isGroupMember(user.id, groupId))) notFound();
-
-  const progress = await prisma.checkpointProgress.findMany({
-    where: { userId: user.id, checkpointId: { in: project.checkpoints.map((c) => c.id) } },
-  });
+  // Only the viewer's own progress, so it's safe to fetch before the
+  // membership check resolves.
+  const [memberOfGroup, progress] = await Promise.all([
+    isGroupMember(userId, groupId),
+    prisma.checkpointProgress.findMany({
+      where: { userId, checkpointId: { in: project.checkpoints.map((c) => c.id) } },
+    }),
+  ]);
+  if (!memberOfGroup) notFound();
   const completedIds = new Set(progress.filter((p) => p.completed).map((p) => p.checkpointId));
   const completedCount = getCompletedCount(completedIds, project.checkpoints.map((c) => c.id));
   const risk = computeRisk({

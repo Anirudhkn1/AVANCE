@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireSessionUser } from "@/lib/session";
+import { requireSessionUserId } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { requireOrgRole } from "@/lib/permissions";
 import { getCompletedCount } from "@/lib/progress";
@@ -10,24 +10,36 @@ import { InterventionForm, FairPlayForm } from "@/components/host-student-forms"
 
 export default async function StudentDetailPage({ params }: { params: Promise<{ orgId: string; userId: string }> }) {
   const { orgId, userId } = await params;
-  const host = await requireSessionUser();
+  const hostId = await requireSessionUserId();
 
-  try {
-    await requireOrgRole(host.id, orgId, ["HEAD", "HOST"]);
-  } catch {
-    notFound();
-  }
-
-  const membership = await prisma.organisationMembership.findUnique({
-    where: { userId_organisationId: { userId, organisationId: orgId } },
-    include: { user: true, organisation: true },
-  });
-  if (!membership) notFound();
-
-  const groupMemberships = await prisma.groupMembership.findMany({
-    where: { userId, group: { organisationId: orgId } },
-    include: { group: true },
-  });
+  // The role check runs alongside the reads; nothing is shown unless it passes.
+  const [allowed, membership, groupMemberships, interventions, fairPlayHistory] = await Promise.all([
+    requireOrgRole(hostId, orgId, ["HEAD", "HOST"]).then(
+      () => true,
+      () => false
+    ),
+    prisma.organisationMembership.findUnique({
+      where: { userId_organisationId: { userId, organisationId: orgId } },
+      include: { user: true, organisation: true },
+    }),
+    prisma.groupMembership.findMany({
+      where: { userId, group: { organisationId: orgId } },
+      include: { group: true },
+    }),
+    prisma.intervention.findMany({
+      where: { organisationId: orgId, studentId: userId },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: { host: true },
+    }),
+    prisma.fairPlayRecord.findMany({
+      where: { membership: { userId, organisationId: orgId } },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: { actor: true },
+    }),
+  ]);
+  if (!allowed || !membership) notFound();
 
   const projectRows = await Promise.all(
     groupMemberships.map(async (gm) => {
@@ -53,20 +65,6 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
     })
   );
   const activeProjects = projectRows.filter((r): r is NonNullable<typeof r> => r !== null);
-
-  const interventions = await prisma.intervention.findMany({
-    where: { organisationId: orgId, studentId: userId },
-    orderBy: { createdAt: "desc" },
-    take: 10,
-    include: { host: true },
-  });
-
-  const fairPlayHistory = await prisma.fairPlayRecord.findMany({
-    where: { membershipId: membership.id },
-    orderBy: { createdAt: "desc" },
-    take: 10,
-    include: { actor: true },
-  });
 
   return (
     <div className="mx-auto max-w-3xl w-full px-4 py-8 space-y-8">

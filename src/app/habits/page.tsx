@@ -1,4 +1,4 @@
-import { requireSessionUser } from "@/lib/session";
+import { requireSessionUserId } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { createHabitAction } from "@/actions/habits";
 import { computeHabitStreak } from "@/lib/habitStreak";
@@ -12,17 +12,17 @@ function startOfDay(d: Date) {
 }
 
 export default async function HabitsPage() {
-  const user = await requireSessionUser();
+  const userId = await requireSessionUserId();
   const today = startOfDay(new Date());
 
   const [habits, sharedWithMe] = await Promise.all([
     prisma.habit.findMany({
-      where: { userId: user.id, archived: false },
+      where: { userId, archived: false },
       include: { completions: true, shares: { include: { sharedWith: true } } },
       orderBy: { createdAt: "asc" },
     }),
     prisma.habitShare.findMany({
-      where: { sharedWithId: user.id },
+      where: { sharedWithId: userId },
       include: { habit: { include: { user: true, completions: true } } },
     }),
   ]);

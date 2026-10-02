@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import "./globals.css";
 import { alegreyaSans, alegreyaSansSC, spaceMono, specialElite } from "./fonts";
-import { getSessionUser } from "@/lib/session";
+import { getSessionUser, getSessionUserId } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { INTRO_STORAGE_KEY } from "@/lib/brand";
 import { Navbar, NavbarFallback } from "@/components/navbar";
 import { AppBackground } from "@/components/app-background";
 import { IntroOverlay } from "@/components/intro-overlay";
+import { SessionSync } from "@/components/session-sync";
 
 export const metadata: Metadata = {
   title: "Avance — A game layer for real-world work",
@@ -35,13 +36,33 @@ const INTRO_GATE_SCRIPT = `try{if(location.pathname==="/"&&!sessionStorage.getIt
 // up the rest of the page. See node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/loading.md
 // ("Good to know" / Navigation section).
 async function AppChrome() {
-  const user = await getSessionUser();
-  const unreadCount = user
-    ? await prisma.notification.count({ where: { userId: user.id, read: false } })
-    : 0;
+  // The unread count only needs the id from the token, so it runs alongside
+  // the profile lookup instead of after it.
+  const userId = await getSessionUserId();
+  let user, unreadCount;
+  try {
+    [user, unreadCount] = await Promise.all([
+      getSessionUser(),
+      userId ? prisma.notification.count({ where: { userId, read: false } }) : 0,
+    ]);
+  } catch (error) {
+    // The root layout has no error boundary above it, so a database hiccup
+    // here would otherwise take down the whole document. Keep the shell up
+    // with the placeholder nav; the page's own error.tsx offers a retry.
+    console.error("Navbar data unavailable:", error);
+    return (
+      <>
+        <SessionSync userId={userId} />
+        <NavbarFallback />
+      </>
+    );
+  }
 
   return (
     <>
+      {/* The token's id (not the profile row), so a tab on /login while
+          signed in still reports the real session. */}
+      <SessionSync userId={userId} />
       {user && <AppBackground />}
       <Navbar user={user} unreadCount={unreadCount} />
     </>

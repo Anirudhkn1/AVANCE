@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { requireSessionUser } from "@/lib/session";
+import { requireSessionUserId } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { createGroupAction } from "@/actions/groups";
 import { canManageGroups } from "@/lib/permissions";
@@ -10,21 +10,22 @@ import { RoleControls } from "@/components/role-controls";
 
 export default async function OrganisationOverviewPage({ params }: { params: Promise<{ orgId: string }> }) {
   const { orgId } = await params;
-  const user = await requireSessionUser();
+  const userId = await requireSessionUserId();
 
-  const membership = await prisma.organisationMembership.findUnique({
-    where: { userId_organisationId: { userId: user.id, organisationId: orgId } },
-    include: { organisation: true },
-  });
+  const [membership, groups] = await Promise.all([
+    prisma.organisationMembership.findUnique({
+      where: { userId_organisationId: { userId, organisationId: orgId } },
+      include: { organisation: true },
+    }),
+    prisma.group.findMany({
+      where: { organisationId: orgId },
+      include: { _count: { select: { memberships: true, projects: true } } },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
   if (!membership) notFound();
 
   const isHost = canManageGroups(membership.role);
-
-  const groups = await prisma.group.findMany({
-    where: { organisationId: orgId },
-    include: { _count: { select: { memberships: true, projects: true } } },
-    orderBy: { createdAt: "asc" },
-  });
 
   const [memberCount, totalXp, totalCompleted, members] = await Promise.all([
     prisma.organisationMembership.count({ where: { organisationId: orgId } }),
@@ -115,7 +116,7 @@ export default async function OrganisationOverviewPage({ params }: { params: Pro
                     <p className="font-medium text-sm">{m.user.name}</p>
                     <p className="text-xs text-muted">{m.user.email}</p>
                   </div>
-                  <RoleControls organisationId={orgId} membershipId={m.id} currentRole={m.role} isSelf={m.userId === user.id} />
+                  <RoleControls organisationId={orgId} membershipId={m.id} currentRole={m.role} isSelf={m.userId === userId} />
                 </li>
               ))}
             </ul>

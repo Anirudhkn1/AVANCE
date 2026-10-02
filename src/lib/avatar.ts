@@ -25,7 +25,7 @@ export const AVATAR_STYLE_LABELS: Record<AvatarStyle, string> = {
 
 // New Style instances re-validate the definition's JSON Schema, so these are
 // built once at module load and reused across every render (the Avatar
-// constructor's own docs call this out) rather than per avatarDataUri() call.
+// constructor's own docs call this out) rather than per avatarSvg() call.
 const STYLES: Record<AvatarStyle, Style<unknown>> = {
   voxelArt: new Style(voxelArtDefinition),
 };
@@ -60,8 +60,9 @@ export function randomAvatarValue(): string {
   return avatarValue(style, randomSeed());
 }
 
-/** Renders a stored avatarSeed value to an inline SVG data URI. */
-export function avatarDataUri(value: string, size = 64): string {
+/** Renders a stored avatarSeed value to SVG markup (served by /api/avatar).
+ * No fixed size — the SVG scales to whatever box the <img> gives it. */
+export function avatarSvg(value: string): string {
   const { style, seed } = parseAvatarValue(value);
-  return new DicebearAvatar(STYLES[style], { seed, size }).toDataUri();
+  return new DicebearAvatar(STYLES[style], { seed }).toString();
 }
