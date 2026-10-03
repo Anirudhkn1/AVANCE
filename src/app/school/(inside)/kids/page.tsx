@@ -15,7 +15,7 @@ export default async function KidsPage() {
 
   return (
     <div className="mx-auto max-w-3xl w-full px-4 py-8 space-y-8">
-      <BackLink href="/school">School</BackLink>
+      <BackLink href="/school/enter">Who are you?</BackLink>
       <h1 className="text-center text-3xl font-semibold tracking-tight">Which student?</h1>
 
       <div className="flex flex-wrap justify-center gap-8">

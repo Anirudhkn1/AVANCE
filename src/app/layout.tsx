@@ -10,6 +10,7 @@ import { AppBackground } from "@/components/app-background";
 import { IntroOverlay } from "@/components/intro-overlay";
 import { SessionSync } from "@/components/session-sync";
 import { NavigationProgress } from "@/components/navigation-progress";
+import { OutsideSchools } from "@/components/schools-chrome";
 
 export const metadata: Metadata = {
   title: "Avance — A game layer for real-world work",
@@ -54,7 +55,9 @@ async function AppChrome() {
     return (
       <>
         <SessionSync userId={userId} />
-        <NavbarFallback />
+        <OutsideSchools>
+          <NavbarFallback />
+        </OutsideSchools>
       </>
     );
   }
@@ -64,8 +67,11 @@ async function AppChrome() {
       {/* The token's id (not the profile row), so a tab on /login while
           signed in still reports the real session. */}
       <SessionSync userId={userId} />
-      {user && <AppBackground />}
-      <Navbar user={user} unreadCount={unreadCount} />
+      {/* Avance Schools brings its own top bar and theme (src/app/school). */}
+      <OutsideSchools>
+        {user && <AppBackground />}
+        <Navbar user={user} unreadCount={unreadCount} />
+      </OutsideSchools>
     </>
   );
 }
@@ -87,7 +93,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Suspense fallback={null}>
           <NavigationProgress />
         </Suspense>
-        <Suspense fallback={<NavbarFallback />}>
+        <Suspense
+          fallback={
+            <OutsideSchools>
+              <NavbarFallback />
+            </OutsideSchools>
+          }
+        >
           <AppChrome />
         </Suspense>
         <div className="flex flex-1 flex-col">{children}</div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { use, useActionState, useState } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/logo";
 import { loginAction } from "@/actions/auth";
@@ -8,7 +8,10 @@ import { Button } from "@/components/ui";
 import { PasswordField } from "@/components/password-field";
 import { CartoonKeyboard, type KeyActivity } from "@/components/cartoon-keyboard";
 
-export default function LoginPage() {
+export default function LoginPage({ searchParams }: PageProps<"/login">) {
+  // Where to land after signing in (e.g. back into Avance Schools); the
+  // action only honours same-site paths.
+  const next = use(searchParams).next;
   const [error, formAction, pending] = useActionState(loginAction, undefined);
   const [activity, setActivity] = useState<KeyActivity>(null);
 
@@ -27,6 +30,7 @@ export default function LoginPage() {
             <p className="text-sm text-muted mt-1">Sign in to continue your quest.</p>
           </div>
           <form action={formAction} className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+            {typeof next === "string" && <input type="hidden" name="next" value={next} />}
             <div>
               <label className="block text-sm font-medium mb-1" htmlFor="email">
                 Email
