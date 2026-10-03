@@ -1,4 +1,4 @@
-import { Alegreya_Sans, Alegreya_Sans_SC, Space_Mono, Special_Elite } from "next/font/google";
+import { Alegreya_Sans, Alegreya_Sans_SC, Fredoka, Space_Mono, Special_Elite } from "next/font/google";
 
 // Typewriter face — the "Avance" name everywhere (logo, intro, hero particle
 // word) and every heading. Only one static weight exists, so anything asked
@@ -29,5 +29,13 @@ export const alegreyaSans = Alegreya_Sans({
 export const spaceMono = Space_Mono({
   variable: "--font-space-mono",
   weight: ["400", "700"],
+  subsets: ["latin"],
+});
+
+// Avance Schools' chunky display face — titles and headings under /school
+// only. Imported by the school layouts, so the rest of the app never loads it.
+export const fredoka = Fredoka({
+  variable: "--font-fredoka",
+  weight: ["500", "600", "700"],
   subsets: ["latin"],
 });

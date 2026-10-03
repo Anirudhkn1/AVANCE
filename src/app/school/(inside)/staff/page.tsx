@@ -25,7 +25,7 @@ export default async function StaffHomePage({ searchParams }: PageProps<"/school
   if (!staff) {
     return (
       <div className="mx-auto max-w-3xl w-full px-4 py-8 space-y-6">
-        <BackLink href="/school">School</BackLink>
+        <BackLink href="/school/enter">Who are you?</BackLink>
         <h1 className="text-2xl font-semibold tracking-tight">Staff</h1>
         <div className="grid gap-6 sm:grid-cols-2">
           <Card>

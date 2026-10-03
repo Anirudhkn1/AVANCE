@@ -1,0 +1,333 @@
+/* Motion for ClassroomScene — everything slow, like the class is caught in
+   slow motion. Joints rotate about their own (0,0), which each <Arm> puts at
+   the shoulder or elbow. */
+
+.classroom-scene {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Light in the corridor behind the glass follows the time of day. */
+  --sky-top: #e8f6f8;
+  --sky-bottom: #bfe0ea;
+}
+
+.schools[data-band="afternoon"] .classroom-scene {
+  --sky-top: #fff1cf;
+  --sky-bottom: #f2c98a;
+}
+
+.schools[data-band="evening"] .classroom-scene {
+  --sky-top: #f2b48a;
+  --sky-bottom: #7b6aa8;
+}
+
+.cs-sky-top {
+  stop-color: var(--sky-top);
+}
+.cs-sky-bottom {
+  stop-color: var(--sky-bottom);
+}
+
+.cs-swing {
+  transform-origin: 0 0;
+  rotate: var(--r0);
+  animation: cs-swing var(--dur, 6s) ease-in-out var(--delay, 0s) infinite alternate;
+}
+@keyframes cs-swing {
+  from {
+    rotate: var(--r0);
+  }
+  to {
+    rotate: var(--r1);
+  }
+}
+
+.cs-spin {
+  transform-origin: 0 0;
+  animation: cs-spin var(--dur, 3s) linear infinite;
+}
+@keyframes cs-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+.cs-tick {
+  transform-origin: 0 0;
+  animation: cs-spin 60s steps(60) infinite;
+}
+
+/* The teacher breathes in, looming a little taller. */
+.cs-loom {
+  transform-origin: 0 0;
+  animation: cs-loom 6s ease-in-out infinite;
+}
+@keyframes cs-loom {
+  50% {
+    scale: 1.015 1.025;
+  }
+}
+
+.cs-aura {
+  opacity: 0.9;
+  animation: cs-aura 5s ease-in-out infinite;
+}
+@keyframes cs-aura {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.cs-pulse {
+  transform-origin: 0 0;
+  animation: cs-pulse 2.6s ease-in-out infinite;
+}
+@keyframes cs-pulse {
+  40% {
+    scale: 1.25;
+  }
+}
+
+.cs-glint {
+  animation: cs-glint 4.5s ease-in-out infinite;
+}
+@keyframes cs-glint {
+  0%,
+  70%,
+  100% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0.15;
+  }
+}
+
+.cs-menace {
+  animation: cs-menace 3.4s ease-in-out infinite;
+}
+@keyframes cs-menace {
+  0%,
+  100% {
+    translate: 0 0;
+    opacity: 0.95;
+  }
+  50% {
+    translate: -6px -8px;
+    opacity: 0.5;
+  }
+}
+
+.cs-zzz {
+  animation: cs-zzz 4.8s ease-out infinite;
+}
+@keyframes cs-zzz {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: 34px -70px;
+  }
+}
+
+.cs-breathe {
+  transform-origin: 0 0;
+  animation: cs-breathe 5s ease-in-out infinite;
+}
+@keyframes cs-breathe {
+  50% {
+    translate: 0 -3px;
+  }
+}
+
+.cs-bar {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: cs-bar 4.8s ease-in-out infinite alternate;
+}
+@keyframes cs-bar {
+  from {
+    scale: 1 0.35;
+  }
+  to {
+    scale: 1 1;
+  }
+}
+
+.cs-screen {
+  animation: cs-screen 3.6s ease-in-out infinite;
+}
+@keyframes cs-screen {
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Lobbed across the room on an arc, spinning, then gone. */
+.cs-fly {
+  opacity: 0;
+  animation: cs-fly var(--dur) linear var(--delay, 0s) infinite;
+}
+@keyframes cs-fly {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+  6% {
+    opacity: 1;
+  }
+  50% {
+    translate: var(--mx) var(--my);
+    animation-timing-function: ease-in;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: var(--ex) var(--ey);
+    rotate: var(--spin);
+  }
+}
+
+.cs-puff {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cs-puff 3.2s ease-out infinite;
+}
+@keyframes cs-puff {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+    scale: 0.4;
+  }
+  25% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    translate: 10px -90px;
+    scale: 1.4;
+  }
+}
+
+.cs-pow {
+  transform-origin: 0 0;
+  animation: cs-pow 2.4s ease-in-out infinite;
+}
+@keyframes cs-pow {
+  0%,
+  100% {
+    scale: 0.92;
+    rotate: -3deg;
+  }
+  50% {
+    scale: 1.06;
+    rotate: 3deg;
+  }
+}
+
+.cs-bubble {
+  transform-box: fill-box;
+  transform-origin: 70% 90%;
+  animation: cs-bubble 4.2s ease-in-out infinite;
+}
+@keyframes cs-bubble {
+  0%,
+  100% {
+    scale: 0.35;
+  }
+  50% {
+    scale: 1.25;
+  }
+}
+
+.cs-note {
+  animation: cs-note 3.9s ease-out infinite;
+}
+@keyframes cs-note {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: 40px -80px;
+  }
+}
+
+/* The corridor chase: across the glass, then back round again. */
+.cs-chase {
+  animation: cs-chase 9s linear infinite;
+}
+@keyframes cs-chase {
+  from {
+    translate: -260px 0;
+  }
+  to {
+    translate: 520px 0;
+  }
+}
+
+.cs-bob {
+  animation: cs-bob 0.9s ease-in-out infinite alternate;
+}
+@keyframes cs-bob {
+  to {
+    translate: 0 -10px;
+  }
+}
+
+.cs-flicker {
+  animation: cs-flicker 5s steps(1) infinite;
+}
+@keyframes cs-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  62% {
+    opacity: 0.35;
+  }
+  65% {
+    opacity: 1;
+  }
+  68% {
+    opacity: 0.4;
+  }
+  72% {
+    opacity: 1;
+  }
+}
+
+/* Slingshot band: drawn back slowly, then let go. */
+.cs-pull {
+  transform-origin: 0 44px;
+  animation: cs-pull 2.4s ease-in infinite;
+}
+@keyframes cs-pull {
+  0% {
+    scale: 1 0.4;
+  }
+  85% {
+    scale: 1 1.15;
+  }
+  90%,
+  100% {
+    scale: 1 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .classroom-scene * {
+    animation: none !important;
+  }
+}
