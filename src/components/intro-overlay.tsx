@@ -93,6 +93,7 @@ export function IntroOverlay() {
     const arrow = one<SVGGElement>("arrow");
     const arrowBright = one<SVGPathElement>("arrow-bright");
     const canvas = one<HTMLCanvasElement>("particles");
+    const boot = one<HTMLElement>("boot");
     const letters = $('[data-el="letter"]');
     const lines = (kind: string) => $(`[data-line="${kind}"]`);
 
@@ -328,6 +329,9 @@ export function IntroOverlay() {
 
     const play = () => {
       if (cancelled) return;
+      // The animation is taking over the black cover — the "still loading"
+      // spinner has done its job.
+      boot.style.display = "none";
       if (reduced) {
         finalState();
         gsap.fromTo(group, { opacity: 0 }, { opacity: 1, duration: 0.25 });
@@ -405,6 +409,19 @@ export function IntroOverlay() {
   return (
     <div ref={rootRef} className="intro-overlay fixed inset-0 z-[1000] overflow-hidden" aria-hidden="true">
       <div data-el="cover" className="absolute inset-0 bg-[#0a0b10]" />
+      {/* Server-rendered and CSS-animated, so it's spinning from the very
+          first frame — before any JS has downloaded. Without it the cover is
+          a flat black screen for as long as hydration takes (several seconds
+          on a cold `next dev`, with ~4MB of unminified JS to load), which
+          looks like the site has hung. Fades in after a beat (globals.css)
+          so a fast load never sees it; play() hides it once the intro runs. */}
+      <div data-el="boot" className="intro-boot absolute inset-0 flex items-center justify-center">
+        <span className="relative flex h-12 w-12 items-center justify-center">
+          <span className="absolute inset-0 rounded-full border-2 border-[#8b85ff]/20" />
+          <span className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#8b85ff] animate-loader-spin" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#8b85ff] animate-loader-pulse" />
+        </span>
+      </div>
       <div
         data-el="vignette"
         className="absolute inset-0"

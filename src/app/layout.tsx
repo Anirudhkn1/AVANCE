@@ -9,6 +9,7 @@ import { Navbar, NavbarFallback } from "@/components/navbar";
 import { AppBackground } from "@/components/app-background";
 import { IntroOverlay } from "@/components/intro-overlay";
 import { SessionSync } from "@/components/session-sync";
+import { NavigationProgress } from "@/components/navigation-progress";
 
 export const metadata: Metadata = {
   title: "Avance — A game layer for real-world work",
@@ -81,6 +82,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <IntroOverlay />
+        {/* Its own boundary: useSearchParams suspends, and this must never
+            hold up (or be held up by) the navbar's data. */}
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         <Suspense fallback={<NavbarFallback />}>
           <AppChrome />
         </Suspense>

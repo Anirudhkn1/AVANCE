@@ -63,8 +63,14 @@
   }
 }
 
-* {
-  border-color: var(--border);
+/* In the base layer, so it's only the default: unlayered, it outranked every
+   border-color utility (border-accent, border-white/30, …) in the app —
+   including the route loader's spinner arc, which rendered as a flat grey
+   ring that looked frozen. */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
 }
 
 body {
@@ -267,6 +273,22 @@ html[data-intro="handoff"] [data-hero-lockup] {
 
 .animate-loader-pulse {
   animation: loader-pulse 1.2s ease-in-out infinite;
+}
+
+/* IntroOverlay's pre-hydration spinner: held back briefly so a fast load
+   goes straight from black into the intro without flashing it. */
+@keyframes intro-boot-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.intro-boot {
+  opacity: 0;
+  animation: intro-boot-in 300ms ease-out 400ms forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
