@@ -5,6 +5,7 @@ import { ActionButton } from "@/components/school-client";
 import { SubmitForm } from "@/components/forms";
 import { deleteAnnouncementAction, postAnnouncementAction } from "@/actions/school";
 import { levelInfo } from "@/lib/school";
+import { HOMEWORK_XP_CHOICES } from "@/lib/voyage";
 import type { kidStats } from "@/lib/school-stats";
 
 export const fieldClass =
@@ -32,6 +33,22 @@ export function BackLink({ href, children }: { href: string; children: ReactNode
     <Link href={href} className="text-sm text-muted hover:text-foreground">
       ← {children}
     </Link>
+  );
+}
+
+/** Teacher's pick of how much XP a homework is worth (1–3). */
+export function XpSelect({ defaultValue = 1 }: { defaultValue?: number }) {
+  return (
+    <label className="block text-sm text-muted">
+      XP reward
+      <select name="xp" defaultValue={defaultValue} className={`${fieldClass} mt-1`}>
+        {HOMEWORK_XP_CHOICES.map((n) => (
+          <option key={n} value={n}>
+            {"⭐".repeat(n)} {n} XP{n === 1 ? " — quick task" : n === 2 ? " — standard" : " — big effort"}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 

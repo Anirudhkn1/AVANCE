@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { randomAvatarValue } from "@/lib/avatar";
 import { levelInfo } from "@/lib/school";
 import { Avatar, Card } from "@/components/ui";
+import { KidAvatar } from "@/components/kid-avatar";
 import { SubmitForm } from "@/components/forms";
 import { BackLink, fieldClass } from "@/components/school";
 import { createKidAction } from "@/actions/school";
@@ -22,7 +23,7 @@ export default async function KidsPage() {
         {kids.map((k) => (
           <Link key={k.id} href={`/school/kid/${k.id}`} className="group flex w-32 flex-col items-center gap-2">
             <span className="flex h-32 w-32 items-center justify-center rounded-2xl border-2 border-border bg-surface shadow-sm transition group-hover:scale-105 group-hover:border-accent [&_img]:h-24 [&_img]:w-24">
-              <Avatar seed={k.avatarSeed} size="lg" />
+              <KidAvatar kid={k} size="lg" />
             </span>
             <span className="schools-name text-base">{k.name}</span>
             <span className="text-xs text-muted">Level {levelInfo(k.xp).level}</span>

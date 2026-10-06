@@ -20,7 +20,7 @@ import { PdfPage, renderPdf } from "./seed-pdf";
 
 // Kept in step with src/lib/school.ts (which can't be imported here: it is
 // `server-only`).
-const HOMEWORK_XP = 10;
+// Each homework is worth 1–3 XP (teacher's choice) — see src/lib/voyage.ts.
 const BUCKET = "school-files";
 
 // Every demo code contains a character randomCode() never produces (I, O or
@@ -648,9 +648,9 @@ async function main() {
     classByName.get(className)!.subjects.find((s) => s.name === subjectName)!;
 
   // --- Homework & daily notes ---------------------------------------------
-  type BuiltHomework = { id: string; subjectId: string; classroomId: string; kind: Kind; day: string; dueDay: string; createdAt: Date; dueDate: Date };
+  type BuiltHomework = { id: string; subjectId: string; classroomId: string; kind: Kind; day: string; dueDay: string; createdAt: Date; dueDate: Date; xp: number };
   const homework: BuiltHomework[] = [];
-  const homeworkRows: { id: string; subjectId: string; title: string; description: string; dueDate: Date; createdAt: Date }[] = [];
+  const homeworkRows: { id: string; subjectId: string; title: string; description: string; dueDate: Date; xp: number; createdAt: Date }[] = [];
   const noteRows: { subjectId: string; day: string; body: string; updatedAt: Date }[] = [];
 
   for (const c of classes) {
@@ -693,10 +693,11 @@ async function main() {
           title: fill(templates[n % templates.length], s.kind, topic, index),
           description: chance(0.35) ? pick(HOMEWORK_DETAILS) : "",
           dueDate: istDayEnd(dueDay),
+          xp: pick([1, 1, 2, 2, 3]),
           createdAt,
         };
         homeworkRows.push(row);
-        homework.push({ id: row.id, subjectId: s.id, classroomId: c.id, kind: s.kind, day, dueDay, createdAt, dueDate: row.dueDate });
+        homework.push({ id: row.id, subjectId: s.id, classroomId: c.id, kind: s.kind, day, dueDay, createdAt, dueDate: row.dueDate, xp: row.xp });
       }
     });
   }
@@ -756,6 +757,7 @@ async function main() {
   // --- Completions ---------------------------------------------------------
   type Completion = { homeworkId: string; kidId: string; completedAt: Date; late: boolean };
   const completions: Completion[] = [];
+  const homeworkXp = new Map(homework.map((h) => [h.id, h.xp]));
   const homeworkByClass = new Map<string, BuiltHomework[]>();
   for (const h of homework) homeworkByClass.set(h.classroomId, [...(homeworkByClass.get(h.classroomId) ?? []), h]);
 
@@ -838,7 +840,7 @@ async function main() {
 
     completions.push(...mine);
     const row = kidRows.find((r) => r.id === kid.id)!;
-    row.xp = mine.length * HOMEWORK_XP;
+    row.xp = mine.reduce((n, c) => n + homeworkXp.get(c.homeworkId)!, 0);
   }
 
   await prisma.kidProfile.createMany({ data: kidRows });
@@ -929,10 +931,12 @@ async function main() {
   // --- Summary --------------------------------------------------------------
   const aarav = kids.find((k) => k.special === "aarav")!;
   const aaravDone = completions.filter((c) => c.kidId === aarav.id).length;
+  const aaravXp = kidRows.find((r) => r.id === aarav.id)?.xp ?? 0;
   const fiveAHomework = homework.filter((h) => h.classroomId === fiveA.id).length;
   console.log(`\n${SCHOOL_NAME}: ${classes.length} classrooms, ${kids.length} students, ${homework.length} homework,`);
   console.log(`${completions.length} completions, ${noteRows.length} class notes, ${announcementRows.length} announcements.`);
-  console.log(`Aarav: ${aaravDone}/${fiveAHomework} homework done in 5-A, ${aaravDone * HOMEWORK_XP} XP.`);
+  console.log(`Aarav: ${aaravDone}/${fiveAHomework} homework done in 5-A, ${aaravXp} XP.`);
+  console.log("Next: npm run db:seed:voyage (Voyage heroes for the demo kids), npm run db:seed:elixir.");
   console.log(`\nDemo logins (password: ${DEMO_PASSWORD}):`);
   console.log(`  Student side : ${PARENT.email}   → Profiles → School → Student → Aarav (5-A) or Diya (4-A)`);
   console.log(`  Teacher      : ${STAFF.ananya.email}  → Profiles → School → Staff (Ms. Ananya Rao, 5-A class teacher)`);

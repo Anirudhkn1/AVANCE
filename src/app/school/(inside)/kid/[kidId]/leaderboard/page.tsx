@@ -1,10 +1,14 @@
+import Link from "next/link";
 import { pageKid } from "@/lib/school";
 import { classroomLeaderboard, parsePeriod } from "@/lib/school-stats";
+import { equippedCharacter } from "@/lib/voyage";
 import { Card, EmptyState } from "@/components/ui";
 import { PeriodTabs } from "@/components/school";
+import { KidAvatar } from "@/components/kid-avatar";
 
-// Anonymous on purpose: kids see how many classmates sit at each homework
-// count and their own rank, never who is where.
+// Classmates are listed by name with their Voyage hero as the picture; tapping
+// a name opens that hero's animated stage (students only — the teachers' own
+// leaderboard is separate and shows plain avatars).
 export default async function KidLeaderboardPage({
   params,
   searchParams,
@@ -23,7 +27,7 @@ export default async function KidLeaderboardPage({
     );
   }
 
-  const { ranked, tiers } = await classroomLeaderboard(classroom.id, period);
+  const { ranked } = await classroomLeaderboard(classroom.id, period);
   const me = ranked.find((r) => r.id === kid.id);
 
   return (
@@ -43,18 +47,30 @@ export default async function KidLeaderboardPage({
 
       <Card>
         <ul className="space-y-2">
-          {tiers.map((t) => {
-            const mine = me?.count === t.count;
+          {ranked.map((r) => {
+            const mine = r.id === kid.id;
+            const hero = equippedCharacter(r.characterId, r.xp);
             return (
               <li
-                key={t.count}
-                className={`flex items-center gap-4 rounded-xl px-4 py-3 ${mine ? "bg-accent-soft font-medium" : "bg-surface-muted"}`}
+                key={r.id}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 ${mine ? "bg-accent-soft font-medium" : "bg-surface-muted"}`}
               >
-                <span className="w-10 text-lg">{t.rank === 1 ? "🥇" : t.rank === 2 ? "🥈" : t.rank === 3 ? "🥉" : `#${t.rank}`}</span>
-                <span className="flex-1">
-                  {t.students} student{t.students === 1 ? "" : "s"} finished {t.count} homework{t.count === 1 ? "" : "s"}
+                <span className="w-9 shrink-0 text-lg">{r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : `#${r.rank}`}</span>
+                <KidAvatar kid={r} size="md" />
+                <span className="min-w-0 flex-1">
+                  {hero ? (
+                    <Link href={`/school/kid/${kid.id}/hero/${r.id}`} className="truncate hover:underline" title={`See ${r.name}'s ${hero.name}`}>
+                      {r.name}
+                      <span className="ml-1.5 text-xs text-muted">✨ {hero.name}</span>
+                    </Link>
+                  ) : (
+                    <span className="truncate">{r.name}</span>
+                  )}
                 </span>
                 {mine && <span className="text-sm text-accent">You</span>}
+                <span className="text-sm text-muted tabular-nums">
+                  {r.count} homework{r.count === 1 ? "" : "s"}
+                </span>
               </li>
             );
           })}

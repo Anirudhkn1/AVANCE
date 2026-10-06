@@ -4,6 +4,7 @@ import { signSchoolFiles } from "@/lib/school-storage";
 import { Badge, Card, EmptyState, SectionHeading } from "@/components/ui";
 import { ActionButton } from "@/components/school-client";
 import { BackLink, fmtIst } from "@/components/school";
+import { Voyage } from "@/components/voyage";
 import { toggleHomeworkAction } from "@/actions/school";
 
 export default async function KidHomeworkPage({ params }: PageProps<"/school/kid/[kidId]/homework">) {
@@ -42,10 +43,11 @@ export default async function KidHomeworkPage({ params }: PageProps<"/school/kid
   return (
     <Page>
       {back}
+      <Voyage kidId={kid.id} xp={kid.xp} equippedId={kid.characterId} />
       <Card>
         <SectionHeading
           title="🎮 Homework"
-          subtitle={`${pendingWork.length} to do · +10 XP each`}
+          subtitle={`${pendingWork.length} to do · earn XP to sail your Voyage`}
           action={
             timetableUrl && (
               <a href={timetableUrl} target="_blank" rel="noreferrer" className="text-sm text-accent hover:underline">
@@ -68,6 +70,7 @@ export default async function KidHomeworkPage({ params }: PageProps<"/school/kid
                       {h.subject.name} · due {fmtIst(h.dueDate, false)}
                     </p>
                   </div>
+                  <Badge tone="accent">+{h.xp} XP</Badge>
                   {overdue && <Badge tone="danger">Late</Badge>}
                   <form action={toggleHomeworkAction.bind(null, kid.id, h.id)}>
                     <ActionButton variant="primary">Done ✓</ActionButton>

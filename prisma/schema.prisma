@@ -515,6 +515,7 @@ model KidProfile {
   avatarSeed      String
   xp              Int      @default(0)
   elixirPoints    Int      @default(0) // "drops" earned brewing Elixir cards — see src/lib/elixir.ts
+  characterId     String? // equipped Voyage hero (profile picture) — see src/lib/voyage.ts; only honoured while xp keeps it unlocked
   schoolId        String?
   classroomId     String?
   classroomStatus String?
@@ -533,6 +534,7 @@ model Homework {
   title       String
   description String   @default("")
   dueDate     DateTime // end of the due day, IST
+  xp          Int      @default(1) // 1–3, set by the teacher; what each kid earns for finishing it
   createdAt   DateTime @default(now())
 
   subject     Subject              @relation(fields: [subjectId], references: [id], onDelete: Cascade)

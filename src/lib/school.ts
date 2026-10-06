@@ -40,23 +40,12 @@ export function previousIstDay(day: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// XP & levels — reaching level L takes 25·L·(L−1) XP: L2 at 50, L3 at 150,
-// L4 at 300… (each level needs 50 more than the last).
+// XP & levels — each homework is worth 1–3 XP (the teacher's choice, stored on
+// the Homework row). Levels follow the Voyage route: 50, 100, 250, 500, 750,
+// 1000 XP … see src/lib/voyage.ts.
 // ---------------------------------------------------------------------------
 
-export const HOMEWORK_XP = 10;
-
-function xpForLevel(level: number) {
-  return 25 * level * (level - 1);
-}
-
-export function levelInfo(xp: number) {
-  let level = 1;
-  while (xp >= xpForLevel(level + 1)) level++;
-  const floor = xpForLevel(level);
-  const next = xpForLevel(level + 1);
-  return { level, into: xp - floor, span: next - floor, toNext: next - xp };
-}
+export { levelInfo } from "@/lib/voyage";
 
 // ---------------------------------------------------------------------------
 // Access guards. Pages use the redirecting/notFound variants; actions use

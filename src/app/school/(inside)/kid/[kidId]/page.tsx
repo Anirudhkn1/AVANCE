@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getSeen, kidViewer, pageKid, visibleAnnouncements } from "@/lib/school";
-import { Avatar, Card, SectionHeading } from "@/components/ui";
+import { Card, SectionHeading } from "@/components/ui";
+import { KidAvatar } from "@/components/kid-avatar";
 import { SubmitForm } from "@/components/forms";
 import { DesktopIconLink } from "@/components/desktop-icon";
 import { BackLink, LevelBar, NewDot, fieldClass } from "@/components/school";
@@ -15,7 +16,7 @@ export default async function KidHomePage({ params }: PageProps<"/school/kid/[ki
     <div className="space-y-4">
       <BackLink href="/school/kids">Switch student</BackLink>
       <div className="flex items-center gap-4">
-        <Avatar seed={kid.avatarSeed} size="lg" />
+        <KidAvatar kid={kid} size="lg" />
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold tracking-tight">Hi, {kid.name}!</h1>
           <p className="text-sm text-muted">

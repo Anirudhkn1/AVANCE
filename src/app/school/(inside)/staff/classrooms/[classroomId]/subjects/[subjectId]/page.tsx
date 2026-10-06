@@ -14,6 +14,7 @@ import {
   StudentTable,
   fieldClass,
   fmtIst,
+  XpSelect,
 } from "@/components/school";
 import { createHomeworkAction, deleteHomeworkAction, saveNoteAction, updateHomeworkAction } from "@/actions/school";
 
@@ -75,6 +76,7 @@ export default async function StaffSubjectPage({
               Due date
               <input type="date" name="dueDate" required defaultValue={today} min={today} className={`${fieldClass} mt-1`} />
             </label>
+            <XpSelect />
           </SubmitForm>
         </Card>
 
@@ -109,7 +111,7 @@ export default async function StaffSubjectPage({
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">{h.title}</p>
                     <p className="text-xs text-muted">
-                      Due {fmtIst(h.dueDate, false)} · {h._count.completions}/{rows.length} done
+                      Due {fmtIst(h.dueDate, false)} · +{h.xp} XP · {h._count.completions}/{rows.length} done
                     </p>
                   </div>
                   <form action={deleteHomeworkAction.bind(null, h.id)}>
@@ -132,6 +134,7 @@ export default async function StaffSubjectPage({
                     <input name="title" defaultValue={h.title} required maxLength={120} className={fieldClass} />
                     <textarea name="description" rows={2} defaultValue={h.description} className={fieldClass} />
                     <input type="date" name="dueDate" required defaultValue={istDay(h.dueDate)} className={fieldClass} />
+                    <XpSelect defaultValue={h.xp} />
                   </SubmitForm>
                 </details>
               </li>
