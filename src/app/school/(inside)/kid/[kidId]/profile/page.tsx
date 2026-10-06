@@ -2,7 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { istDay, pageKid, visibleAnnouncements } from "@/lib/school";
 import { kidStats } from "@/lib/school-stats";
 import { signSchoolFiles } from "@/lib/school-storage";
-import { Avatar, Card, SectionHeading } from "@/components/ui";
+import { elixirInfo } from "@/lib/elixir";
+import { Avatar, Card, SectionHeading, StatTile } from "@/components/ui";
 import { AnnouncementList, LevelBar, StudentStatsView } from "@/components/school";
 
 export default async function KidProfilePage({ params }: PageProps<"/school/kid/[kidId]/profile">) {
@@ -20,6 +21,7 @@ export default async function KidProfilePage({ params }: PageProps<"/school/kid/
     kid.schoolId ? visibleAnnouncements(kid.schoolId, classroom?.id ?? null, 50) : [],
   ]);
   const signed = await signSchoolFiles(announcements.map((a) => a.attachmentPath));
+  const elixir = elixirInfo(kid.elixirPoints);
 
   return (
     <div className="mx-auto max-w-3xl w-full px-4 py-8 space-y-6">
@@ -39,6 +41,15 @@ export default async function KidProfilePage({ params }: PageProps<"/school/kid/
       <Card>
         <SectionHeading title="Progress" />
         {stats ? <StudentStatsView stats={stats} xp={kid.xp} /> : <LevelBar xp={kid.xp} />}
+      </Card>
+
+      <Card>
+        <SectionHeading title="🧪 Elixir" subtitle="Spaced-repetition practice set by the teachers" />
+        <div className="grid grid-cols-3 gap-3">
+          <StatTile label="Drops" value={kid.elixirPoints} />
+          <StatTile label="Flasks" value={elixir.flasks} hint="brewed" />
+          <StatTile label="Next flask" value={elixir.toNext} hint="drops to go" />
+        </div>
       </Card>
 
       <Card>

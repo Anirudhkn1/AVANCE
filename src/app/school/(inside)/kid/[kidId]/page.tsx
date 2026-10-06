@@ -86,7 +86,7 @@ export default async function KidHomePage({ params }: PageProps<"/school/kid/[ki
     );
   }
 
-  const [subjects, homeworkToDo] = await Promise.all([
+  const [subjects, homeworkToDo, elixirToBrew] = await Promise.all([
     prisma.subject.findMany({
       where: { classroomId: classroom.id },
       include: {
@@ -98,6 +98,13 @@ export default async function KidHomePage({ params }: PageProps<"/school/kid/[ki
     }),
     prisma.homework.count({
       where: { subject: { classroomId: classroom.id }, completions: { none: { kidId: kid.id } } },
+    }),
+    // Elixir cards ready to brew: new ones, plus any whose next review date has come.
+    prisma.elixirCard.count({
+      where: {
+        deck: { subject: { classroomId: classroom.id } },
+        NOT: { progress: { some: { kidId: kid.id, dueDate: { gt: new Date() } } } },
+      },
     }),
   ]);
   const seen = await getSeen(viewer, subjects.map((s) => `subject:${s.id}`));
@@ -114,6 +121,13 @@ export default async function KidHomePage({ params }: PageProps<"/school/kid/[ki
           sublabel={homeworkToDo > 0 ? `${homeworkToDo} to do` : "All done 🎉"}
         />
         {announcementTile}
+        <DesktopIconLink
+          href={`/school/kid/${kid.id}/elixir`}
+          icon="🧪"
+          label="Elixir"
+          sublabel={elixirToBrew > 0 ? `${elixirToBrew} to brew` : "All caught up"}
+          glyphClassName="bg-[#f5d9ff]"
+        />
       </Tiles>
 
       <Card>

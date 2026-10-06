@@ -572,7 +572,7 @@ function DeskDancer({ x, y, s }: { x: number; y: number; s: number }) {
             hold: (
               <g transform="rotate(180)">
                 <rect x={-26} y={-34} width={52} height={64} fill="#ffffff" stroke={INK} strokeWidth={2.5} />
-                <text x={0} y={6} textAnchor="middle" fontSize={22} fontWeight={700} fill="#d6453d" fontFamily="var(--font-fredoka), sans-serif">
+                <text x={0} y={6} textAnchor="middle" fontSize={22} fontWeight={700} fill="#d6453d" fontFamily="var(--font-schools-heading), sans-serif">
                   100!
                 </text>
                 <ellipse cy={-1} rx={22} ry={15} fill="none" stroke="#d6453d" strokeWidth={2.5} />
@@ -815,7 +815,7 @@ function Teacher({ x, y, s }: { x: number; y: number; s: number }) {
           <path className="cs-pulse" d="M-12 -4Q-4 -4 -4 -12M4 -12Q4 -4 12 -4M12 4Q4 4 4 12M-4 12Q-4 4 -12 4" stroke="#e0263a" strokeWidth={5} fill="none" strokeLinecap="round" />
         </g>
       </g>
-      <g fontFamily="var(--font-fredoka), 'Yu Gothic', 'Noto Sans JP', sans-serif" fontWeight={700} fontSize={58} fill="#5b3fb0" stroke={INK} strokeWidth={3} paintOrder="stroke">
+      <g fontFamily="var(--font-schools-heading), 'Yu Gothic', 'Noto Sans JP', sans-serif" fontWeight={700} fontSize={58} fill="#5b3fb0" stroke={INK} strokeWidth={3} paintOrder="stroke">
         <text x={-280} y={-470} className="cs-menace">
           ゴ
         </text>
@@ -894,7 +894,7 @@ function Pow({ x, y, s }: { x: number; y: number; s: number }) {
           <circle key={i} cx={cx} cy={cy} r={34} fill="#f1ede4" stroke={INK} strokeWidth={3} />
         ))}
         <polygon points={pts} fill="#ffd23f" stroke={INK} strokeWidth={4} strokeLinejoin="round" />
-        <text y={14} textAnchor="middle" fontSize={40} fontWeight={700} fill="#d6453d" stroke={INK} strokeWidth={2.5} paintOrder="stroke" fontFamily="var(--font-fredoka), sans-serif">
+        <text y={14} textAnchor="middle" fontSize={40} fontWeight={700} fill="#d6453d" stroke={INK} strokeWidth={2.5} paintOrder="stroke" fontFamily="var(--font-schools-heading), sans-serif">
           POW!
         </text>
       </g>
@@ -958,7 +958,7 @@ function Corridor() {
       <path d={`M${GLASS_X} ${sideAt(GLASS_X, 0.1)}L1700 ${sideAt(1700, 0.1)}M${GLASS_X} ${sideAt(GLASS_X, 0.66)}L1700 ${sideAt(1700, 0.66)}`} stroke="#5f7d8a" strokeWidth={10} />
       {/* Glints and the graffiti */}
       <path d={`M1300 ${sideAt(1300, 0.18)}L1250 ${sideAt(1250, 0.5)}`} stroke="#ffffff" strokeOpacity={0.6} strokeWidth={8} strokeLinecap="round" />
-      <g transform={`translate(1290 ${sideAt(1290, 0.3)}) skewY(14)`} fontFamily="var(--font-fredoka), sans-serif" fontWeight={700} fill="#e0263a" fontSize={30}>
+      <g transform={`translate(1290 ${sideAt(1290, 0.3)}) skewY(14)`} fontFamily="var(--font-schools-heading), sans-serif" fontWeight={700} fill="#e0263a" fontSize={30}>
         <text>Mr. Thunder</text>
         <text y={40}>is a GRUMP!</text>
         <text x={150} y={78} fontSize={28}>
@@ -1030,7 +1030,7 @@ export function ClassroomScene({ viewBox = "0 0 1600 900", className = "" }: { v
       <rect x={50} y={168} width={600} height={238} rx={6} fill="#7a5530" stroke={INK} strokeWidth={4} />
       <rect x={62} y={180} width={576} height={214} fill="#2f6b4f" stroke={INK} strokeWidth={3} />
       <path d="M90 200L260 214M480 380L620 360" stroke="rgba(255,255,255,0.08)" strokeWidth={16} strokeLinecap="round" />
-      <g fontFamily="var(--font-fredoka), sans-serif" fontWeight={600} fill="#f6f3ea" opacity={0.92}>
+      <g fontFamily="var(--font-schools-heading), sans-serif" fontWeight={600} fill="#f6f3ea" opacity={0.92}>
         <text x={84} y={238} fontSize={40} transform="rotate(-4 84 238)">
           MONSTER
         </text>
@@ -1046,7 +1046,7 @@ export function ClassroomScene({ viewBox = "0 0 1600 900", className = "" }: { v
         <circle cx={330} cy={360} r={18} />
         <path d="M318 356h6M336 356h6M322 370q8 6 16 0M316 344l-6 -12 12 6M344 344l6 -12 -12 6" />
         <path d="M560 210l20 30-36 0z" />
-        <text x={520} y={300} fontSize={26} fill="#f6f3ea" stroke="none" fontFamily="var(--font-fredoka), sans-serif">
+        <text x={520} y={300} fontSize={26} fill="#f6f3ea" stroke="none" fontFamily="var(--font-schools-heading), sans-serif">
           x² = ??
         </text>
       </g>
@@ -1094,7 +1094,7 @@ export function ClassroomScene({ viewBox = "0 0 1600 900", className = "" }: { v
           <>
             <path d="M4 22L22 70" stroke={INK} strokeWidth={10} strokeLinecap="round" />
             <path d="M4 22L22 70" stroke="#f6f0dc" strokeWidth={6} strokeLinecap="round" />
-            <g fontFamily="var(--font-fredoka), sans-serif" fontWeight={700} fontSize={30} fill={NAVY}>
+            <g fontFamily="var(--font-schools-heading), sans-serif" fontWeight={700} fontSize={30} fill={NAVY}>
               {["♪", "♫", "♪"].map((n, i) => (
                 <text key={i} x={46} y={-10} className="cs-note" style={{ animationDelay: `${-i * 1.3}s` } as CSSProperties}>
                   {n}

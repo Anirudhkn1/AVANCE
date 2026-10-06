@@ -502,6 +502,7 @@ model Subject {
   homework      Homework[]
   notes         TeachingNote[]
   announcements Announcement[]
+  elixirDecks   ElixirDeck[]
 
   @@unique([classroomId, name])
 }
@@ -513,6 +514,7 @@ model KidProfile {
   name            String
   avatarSeed      String
   xp              Int      @default(0)
+  elixirPoints    Int      @default(0) // "drops" earned brewing Elixir cards — see src/lib/elixir.ts
   schoolId        String?
   classroomId     String?
   classroomStatus String?
@@ -522,6 +524,7 @@ model KidProfile {
   school      School?              @relation(fields: [schoolId], references: [id], onDelete: SetNull)
   classroom   Classroom?           @relation(fields: [classroomId], references: [id], onDelete: SetNull)
   completions HomeworkCompletion[]
+  elixir      ElixirProgress[]
 }
 
 model Homework {
@@ -602,3 +605,54 @@ model SeenMarker {
 
   @@unique([viewer, section])
 }
+
+// ---------------------------------------------------------------------------
+// Elixir — spaced repetition for kids. Teachers write decks under the
+// subject they teach; every approved kid in the classroom reviews them on an
+// SM-2 schedule (src/lib/study.ts) and earns drops. Separate from the main
+// app's personal Study decks. A kid's schedule for a card is created on
+// their first review of it — no row means "new, due now".
+// ---------------------------------------------------------------------------
+
+model ElixirDeck {
+  id        String   @id @default(cuid())
+  subjectId String
+  title     String
+  createdAt DateTime @default(now())
+
+  subject Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  cards   ElixirCard[]
+
+  @@index([subjectId])
+}
+
+model ElixirCard {
+  id        String   @id @default(cuid())
+  deckId    String
+  front     String
+  back      String
+  createdAt DateTime @default(now())
+
+  deck     ElixirDeck       @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  progress ElixirProgress[]
+
+  @@index([deckId])
+}
+
+model ElixirProgress {
+  id             String   @id @default(cuid())
+  cardId         String
+  kidId          String
+  easeFactor     Float    @default(2.5)
+  interval       Int      @default(0) // days
+  repetitions    Int      @default(0)
+  dueDate        DateTime // start of an IST day
+  lastReviewedAt DateTime @default(now())
+
+  card ElixirCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  kid  KidProfile @relation(fields: [kidId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, kidId])
+  @@index([kidId])
+}
+

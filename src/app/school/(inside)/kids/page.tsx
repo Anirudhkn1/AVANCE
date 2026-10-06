@@ -24,7 +24,7 @@ export default async function KidsPage() {
             <span className="flex h-32 w-32 items-center justify-center rounded-2xl border-2 border-border bg-surface shadow-sm transition group-hover:scale-105 group-hover:border-accent [&_img]:h-24 [&_img]:w-24">
               <Avatar seed={k.avatarSeed} size="lg" />
             </span>
-            <span className="text-sm font-medium">{k.name}</span>
+            <span className="schools-name text-base">{k.name}</span>
             <span className="text-xs text-muted">Level {levelInfo(k.xp).level}</span>
           </Link>
         ))}

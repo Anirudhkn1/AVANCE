@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUserId } from "@/lib/session";
-import { ClassroomScene } from "@/components/classroom-scene";
+import { SchoolCampusScene, SchoolsSky } from "@/components/schools-backdrop";
 import { SchoolsAuthForm } from "@/components/schools-auth";
 
-/** /school/login and /school/register: the classroom, dimmed, behind a notebook-page form. */
+/** /school/login and /school/register: the sky and campus, softly blurred, behind a notebook-page form. */
 export async function SchoolsAuthPage({ mode, searchParams }: { mode: "login" | "register"; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const raw = (await searchParams).next;
   const next = typeof raw === "string" && /^\/(?![/\\])/.test(raw) ? raw : "/school/enter";
@@ -12,8 +12,9 @@ export async function SchoolsAuthPage({ mode, searchParams }: { mode: "login" | 
 
   return (
     <div className="schools-auth">
-      <div className="schools-auth__scene" aria-hidden>
-        <ClassroomScene />
+      <div className="schools-backdrop schools-auth__scene" aria-hidden>
+        <SchoolsSky />
+        <SchoolCampusScene />
       </div>
       <Link href="/school" className="schools-hero__exit">
         ← Avance Schools

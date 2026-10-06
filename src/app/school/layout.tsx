@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { fredoka } from "@/app/fonts";
+import { schoolsHeading, schoolsTitle } from "@/app/fonts";
 import { istBand } from "@/lib/schools-theme";
 import "./schools.css";
 
@@ -16,7 +16,7 @@ export default async function SchoolsLayout({ children }: LayoutProps<"/school">
   // The time band is per request, never baked in at build time.
   await connection();
   return (
-    <div className={`schools ${fredoka.variable}`} data-band={istBand()}>
+    <div className={`schools ${schoolsTitle.variable} ${schoolsHeading.variable}`} data-band={istBand()}>
       {children}
     </div>
   );

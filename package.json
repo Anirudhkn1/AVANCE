@@ -11,8 +11,9 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:school": "tsx prisma/seed-school.ts",
+    "db:seed:elixir": "tsx prisma/seed-elixir.ts",
     "db:studio": "prisma studio",
-    "db:reset": "prisma db push --force-reset && npm run db:seed && npm run db:seed:school"
+    "db:reset": "prisma db push --force-reset && npm run db:seed && npm run db:seed:school && npm run db:seed:elixir"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

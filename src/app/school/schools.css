@@ -1,24 +1,28 @@
 /* Avance Schools — its own look under /school (see school/layout.tsx).
    Everything here hangs off .schools, which re-points the app's design
    tokens (globals.css) so the shared Card/Button/Badge components pick up
-   the classroom palette without being forked. Light mode is notebook
-   paper; dark mode is chalkboard. The accent follows the IST time band
-   (data-band, from src/lib/schools-theme.ts). */
+   the palette without being forked. Light mode is a clear sky-blue day;
+   dark mode is the same school at night (navy + marigold). The time band
+   (data-band, from src/lib/schools-theme.ts) tints the sky and the hero
+   light; the accent stays sky blue. */
 
 .schools {
   --marigold: #f5a915;
-  --ink: #23180c;
+  --ink: #1d2f52;
+  --sky: #2f8fdc;
   --chalk-green: #2f6b4f;
   --desk-amber: #d98a3a;
   --uniform-navy: #24345a;
   --window-aqua: #8fd6e6;
 
-  --background: #fbf2d9;
-  --surface: #fffdf6;
-  --surface-muted: #f6ead0;
-  --foreground: #1d2433;
-  --muted: #5a5f6e;
-  --border: #e8d8b2;
+  --background: #d9effc;
+  --surface: #ffffff;
+  --surface-muted: #eef7fd;
+  --foreground: #172640;
+  --muted: #4f6079;
+  --border: #c9e1f2;
+  --accent: #1b7fc9;
+  --accent-soft: #dcf0fc;
   --accent-foreground: #ffffff;
   --success: #2f7d4f;
   --success-soft: #e6f4ea;
@@ -27,42 +31,31 @@
   --danger: #c2410c;
   --danger-soft: #fde8de;
 
-  /* Notebook ruling, faint enough to sit behind text. */
   --rule: rgba(36, 52, 90, 0.07);
-  --card-shadow: var(--ink);
-  --glow: rgba(245, 169, 21, 0.22);
+  --card-shadow: rgba(29, 47, 82, 0.9);
+  --sheet: rgba(255, 255, 255, 0.86);
+  --sheet-edge: rgba(255, 255, 255, 0.85);
 
   display: flex;
   flex: 1;
   flex-direction: column;
   min-height: 100dvh;
   background-color: var(--background);
-  background-image: radial-gradient(90% 60% at 50% -12%, var(--glow), transparent 70%);
   color: var(--foreground);
-}
-
-.schools[data-band="morning"] {
-  --accent: #0b7d93;
-  --accent-soft: #dff3f7;
-}
-.schools[data-band="afternoon"] {
-  --accent: #b45309;
-  --accent-soft: #fbeedb;
-}
-.schools[data-band="evening"] {
-  --accent: #4c3fa8;
-  --accent-soft: #ebe8fa;
 }
 
 @media (prefers-color-scheme: dark) {
   .schools {
-    --background: #111a33;
-    --surface: #18234a;
-    --surface-muted: #1f2b57;
+    --ink: #0a1230;
+    --background: #0d1630;
+    --surface: #17224a;
+    --surface-muted: #1e2a57;
     --foreground: #f5f0e1;
     --muted: #b3bbd6;
     --border: #2f3d70;
-    --accent-foreground: #111a33;
+    --accent: #7cc4f5;
+    --accent-soft: #1b3561;
+    --accent-foreground: #0d1630;
     --success: #6fd39a;
     --success-soft: #15302a;
     --warning: #f5b54a;
@@ -70,27 +63,31 @@
     --danger: #f59a7a;
     --danger-soft: #3a1c1a;
     --rule: rgba(245, 240, 225, 0.04);
-    --card-shadow: #070b1a;
-    --glow: rgba(245, 169, 21, 0.08);
-  }
-  .schools[data-band="morning"] {
-    --accent: #6fd3e8;
-    --accent-soft: #19355a;
-  }
-  .schools[data-band="afternoon"] {
-    --accent: #f5b54a;
-    --accent-soft: #3a3020;
-  }
-  .schools[data-band="evening"] {
-    --accent: #b4a7ff;
-    --accent-soft: #2a2860;
+    --card-shadow: #050a1c;
+    --sheet: rgba(18, 27, 60, 0.86);
+    --sheet-edge: rgba(124, 196, 245, 0.18);
   }
 }
 
-.schools :is(h1, h2, h3, h4, h5, h6) {
-  font-family: var(--font-fredoka), var(--font-sans), Arial, Helvetica, sans-serif;
-  font-weight: 600;
-  letter-spacing: 0;
+/* Headings and people's names: a rounded Japanese-style gothic, heavy and
+   friendly, like the captions in a school anime. */
+.schools :is(h1, h2, h3, h4, h5, h6),
+.schools-name {
+  font-family: var(--font-schools-heading), var(--font-sans), Arial, Helvetica, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.005em;
+  font-variant: normal;
+}
+.schools :is(h3, h4, h5, h6) {
+  font-weight: 700;
+}
+.schools-page h1 {
+  color: var(--ink);
+}
+@media (prefers-color-scheme: dark) {
+  .schools-page h1 {
+    color: var(--foreground);
+  }
 }
 
 .schools ::selection {
@@ -98,23 +95,23 @@
   color: var(--accent-foreground);
 }
 
-/* The "Avance Schools" lettering: marigold, inked outline, chunky drop. */
+/* The "Avance Schools" lettering: an anime title card — marigold, a navy
+   outline, and a soft glow under it rather than a hard drop shadow. */
 .schools-title {
-  font-family: var(--font-fredoka), var(--font-sans), sans-serif;
-  font-weight: 700;
+  font-family: var(--font-schools-title), var(--font-sans), sans-serif;
+  font-weight: 400;
+  font-variant: normal;
   color: var(--marigold);
-  -webkit-text-stroke: 0.09em var(--ink);
+  -webkit-text-stroke: 0.08em var(--ink);
   paint-order: stroke fill;
-  text-shadow: 0 0.07em 0 var(--ink);
-  letter-spacing: 0.01em;
-  line-height: 1;
+  text-shadow:
+    0 0.05em 0 var(--ink),
+    0 0.12em 0.25em rgba(16, 60, 110, 0.35);
+  letter-spacing: 0.02em;
+  line-height: 1.1;
 }
 
 /* ---------- Inside pages (everything but the hero) ---------- */
-
-.schools-paper {
-  background-image: repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px);
-}
 
 .schools-topbar {
   position: sticky;
@@ -124,44 +121,190 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.7rem 1rem;
-  background: #1c2a52;
-  border-bottom: 3px solid var(--ink);
+  padding: 0.6rem 1rem;
+  background: rgba(255, 255, 255, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 6px 24px -12px rgba(16, 60, 110, 0.45);
+  backdrop-filter: blur(14px) saturate(1.3);
 }
 
 .schools-topbar__brand {
-  font-size: 1.5rem;
-  -webkit-text-stroke-width: 0.07em;
+  font-size: 1.35rem;
 }
 
 .schools-topbar__exit {
   font-size: 0.875rem;
-  color: #fff;
+  color: var(--ink);
   border-radius: 999px;
   padding: 0.35rem 0.9rem;
-  border: 1.5px solid rgba(255, 255, 255, 0.35);
-  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(29, 47, 82, 0.25);
+  background: rgba(255, 255, 255, 0.6);
   transition:
     background-color 150ms,
     border-color 150ms;
 }
 .schools-topbar__exit:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: var(--marigold);
+  background: #ffffff;
+  border-color: var(--sky);
 }
 
-/* Page titles get a marigold highlighter stroke behind them. */
-.schools-page h1 {
-  text-decoration: underline 0.32em color-mix(in srgb, var(--marigold) 55%, transparent);
-  text-underline-offset: -0.2em;
-  text-decoration-skip-ink: none;
+@media (prefers-color-scheme: dark) {
+  .schools-topbar {
+    background: rgba(10, 18, 48, 0.62);
+    border-bottom-color: rgba(124, 196, 245, 0.15);
+  }
+  .schools-topbar__exit {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .schools-topbar__exit:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: var(--marigold);
+  }
 }
 
-/* Cards read like stiff card-paper cut-outs: inked edge, hard offset shadow. */
+/* Section tabs in the top bar (wide screens) and the phone dock (below).
+   The current section is a marigold pill with an inked edge, like the
+   "Avance Schools" lettering. */
+.schools-topbar__exit-long {
+  display: none;
+}
+.schools-tabs {
+  display: none;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+}
+.schools-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  padding: 0.38rem 0.8rem;
+  font-family: var(--font-schools-heading), var(--font-sans), sans-serif;
+  font-weight: 800;
+  font-size: 0.875rem;
+  color: var(--ink);
+  white-space: nowrap;
+  transition:
+    background-color 140ms,
+    box-shadow 140ms,
+    transform 140ms;
+}
+.schools-tab__icon {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+.schools-tab:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+.schools-tab[aria-current="page"] {
+  background: var(--marigold);
+  border-color: var(--ink);
+  box-shadow: 0 3px 0 var(--ink);
+}
+
+.schools-dock {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 40;
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.35rem 0.5rem calc(0.35rem + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.82);
+  border-top: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 -8px 24px -12px rgba(16, 60, 110, 0.45);
+  backdrop-filter: blur(14px) saturate(1.3);
+}
+.schools-dock__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12rem;
+  min-width: 0;
+  border-radius: 0.9rem;
+  padding: 0.32rem 0.1rem;
+  font-family: var(--font-schools-heading), var(--font-sans), sans-serif;
+  font-weight: 800;
+  font-size: 0.62rem;
+  color: var(--muted);
+}
+.schools-dock__item > span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.schools-dock__icon {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+.schools-dock__item[aria-current="page"] {
+  color: var(--ink);
+  background: var(--marigold);
+  box-shadow: 0 2px 0 var(--ink);
+}
+
+/* Room for the dock under the last card. */
+.schools-page--docked {
+  padding-bottom: 4.6rem;
+}
+
+@media (min-width: 880px) {
+  .schools-tabs {
+    display: flex;
+  }
+  .schools-dock {
+    display: none;
+  }
+  .schools-page--docked {
+    padding-bottom: 0;
+  }
+}
+@media (min-width: 1100px) {
+  .schools-topbar__exit-long {
+    display: inline;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .schools-tab {
+    color: var(--foreground);
+  }
+  .schools-tab:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+  .schools-tab[aria-current="page"] {
+    color: var(--ink);
+  }
+  .schools-dock {
+    background: rgba(10, 18, 48, 0.82);
+    border-top-color: rgba(124, 196, 245, 0.15);
+  }
+}
+
+/* Each page's content sits on a frosted glass sheet over the scene, with
+   a strip of sky either side. .schools-open opts out (the "Who are you?"
+   picker floats its tiles straight over the campus). */
+.schools-page > :not(.schools-open) {
+  width: calc(100% - 1.5rem);
+  margin-block: 1.25rem 2.5rem;
+  border-radius: 1.75rem;
+  background: var(--sheet);
+  border: 1.5px solid var(--sheet-edge);
+  box-shadow: 0 24px 60px -24px rgba(12, 48, 96, 0.55);
+  backdrop-filter: blur(16px) saturate(1.25);
+}
+
+/* Cards read like stiff card-paper cut-outs: inked edge, offset shadow. */
 .schools [data-card] {
   border: 2px solid var(--ink);
   border-radius: 1.1rem;
-  box-shadow: 4px 5px 0 var(--card-shadow);
+  box-shadow: 3px 4px 0 var(--card-shadow);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -426,14 +569,14 @@
 }
 
 .schools-hero__title {
-  font-size: clamp(2.6rem, 8vw, 6.5rem);
+  font-size: clamp(2.2rem, 7vw, 5.6rem);
   animation: schools-rise 900ms cubic-bezier(0.22, 0.8, 0.3, 1) 150ms both;
 }
 
 .schools-hero__tagline {
   margin-top: 0.9rem;
-  font-family: var(--font-fredoka), var(--font-sans), sans-serif;
-  font-weight: 500;
+  font-family: var(--font-schools-heading), var(--font-sans), sans-serif;
+  font-weight: 700;
   font-size: clamp(1.05rem, 2.2vw, 1.5rem);
   color: #fff;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
@@ -446,8 +589,8 @@
   gap: 0.6rem;
   border-radius: 999px;
   padding: 0.95rem 2.1rem;
-  font-family: var(--font-fredoka), var(--font-sans), sans-serif;
-  font-weight: 600;
+  font-family: var(--font-schools-heading), var(--font-sans), sans-serif;
+  font-weight: 800;
   font-size: 1.25rem;
   color: var(--ink);
   background: var(--marigold);
@@ -473,16 +616,13 @@
   position: relative;
   min-height: 100dvh;
   overflow: hidden;
-  background: #111a33;
   isolation: isolate;
 }
 
-/* The classroom, out of focus and dimmed, so the form owns the stage. */
-.schools-auth__scene {
-  position: absolute;
-  inset: -12px;
+/* The sky and campus, softly out of focus, so the form owns the stage. */
+.schools-auth .schools-auth__scene {
   z-index: -1;
-  filter: blur(3px) brightness(0.5) saturate(1.1);
+  filter: blur(2.5px);
 }
 
 .schools-auth__body {
@@ -532,8 +672,8 @@
   width: 100%;
   border-radius: 999px;
   padding: 0.7rem 1rem;
-  font-family: var(--font-fredoka), var(--font-sans), sans-serif;
-  font-weight: 600;
+  font-family: var(--font-schools-heading), var(--font-sans), sans-serif;
+  font-weight: 800;
   font-size: 1.05rem;
   color: var(--ink);
   background: var(--marigold);
@@ -553,6 +693,16 @@
 
 /* ---------- Picker tiles (Who are you? / Which student?) ---------- */
 
+/* "Who are you?" floats over the campus, so its title gets a glass pill. */
+.schools-picker h1 {
+  padding: 0.3em 0.95em;
+  border-radius: 999px;
+  background: var(--sheet);
+  border: 1.5px solid var(--sheet-edge);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 14px 40px -18px rgba(12, 48, 96, 0.6);
+}
+
 .schools-tile {
   display: flex;
   flex-direction: column;
@@ -571,6 +721,7 @@
 }
 .schools-tile:hover {
   transform: translateY(-3px) rotate(-0.6deg);
+  border-color: var(--sky);
   box-shadow: 0 8px 0 var(--ink);
   background: var(--accent-soft);
 }
@@ -578,10 +729,10 @@
 @media (prefers-color-scheme: dark) {
   .schools-tile {
     border-color: var(--border);
-    box-shadow: 0 5px 0 #08120d;
+    box-shadow: 0 5px 0 #050a1c;
   }
   .schools-tile:hover {
-    box-shadow: 0 8px 0 #08120d;
+    box-shadow: 0 8px 0 #050a1c;
   }
 }
 

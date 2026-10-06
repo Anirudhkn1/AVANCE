@@ -1,4 +1,4 @@
-import { Alegreya_Sans, Alegreya_Sans_SC, Fredoka, Space_Mono, Special_Elite } from "next/font/google";
+import { Alegreya_Sans, Alegreya_Sans_SC, M_PLUS_Rounded_1c, Mochiy_Pop_One, Space_Mono, Special_Elite } from "next/font/google";
 
 // Typewriter face — the "Avance" name everywhere (logo, intro, hero particle
 // word) and every heading. Only one static weight exists, so anything asked
@@ -32,10 +32,17 @@ export const spaceMono = Space_Mono({
   subsets: ["latin"],
 });
 
-// Avance Schools' chunky display face — titles and headings under /school
-// only. Imported by the school layouts, so the rest of the app never loads it.
-export const fredoka = Fredoka({
-  variable: "--font-fredoka",
-  weight: ["500", "600", "700"],
+// Avance Schools only — imported by the school layouts, so the rest of the
+// app never loads them. A poppy anime-logo face for the "Avance Schools"
+// lettering, and a rounded Japanese-style gothic for headings and names.
+export const schoolsTitle = Mochiy_Pop_One({
+  variable: "--font-schools-title",
+  weight: "400",
+  subsets: ["latin"],
+});
+
+export const schoolsHeading = M_PLUS_Rounded_1c({
+  variable: "--font-schools-heading",
+  weight: ["500", "700", "800"],
   subsets: ["latin"],
 });

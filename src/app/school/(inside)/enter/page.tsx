@@ -7,7 +7,7 @@ import { getSessionUserId } from "@/lib/session";
 export default async function SchoolEntryPage() {
   if (!(await getSessionUserId())) redirect("/school/login");
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-4 py-16">
+    <div className="schools-open schools-picker mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-4 py-16">
       <h1 className="text-4xl tracking-tight">Who are you?</h1>
       <div className="mt-10 grid w-full max-w-lg grid-cols-2 gap-5">
         <Tile href="/school/kids" emoji="🧒" title="Student" text="Homework, levels and class updates" />
@@ -23,7 +23,7 @@ function Tile({ href, emoji, title, text }: { href: string; emoji: string; title
       <span className="text-5xl" aria-hidden>
         {emoji}
       </span>
-      <span className="font-[family-name:var(--font-fredoka)] text-lg font-semibold">{title}</span>
+      <span className="schools-name text-lg">{title}</span>
       <span className="text-xs text-muted">{text}</span>
     </Link>
   );

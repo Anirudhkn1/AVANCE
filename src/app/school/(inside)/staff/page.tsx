@@ -2,19 +2,16 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireSessionUserId } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { visibleAnnouncements } from "@/lib/school";
-import { signSchoolFiles } from "@/lib/school-storage";
 import { Badge, Card, LinkButton, SectionHeading } from "@/components/ui";
 import { SubmitForm } from "@/components/forms";
 import { ActionButton } from "@/components/school-client";
-import { AnnouncementList, BackLink, fieldClass } from "@/components/school";
+import { BackLink, fieldClass } from "@/components/school";
 import {
   cancelStaffRequestAction,
   createClassroomAction,
   createSchoolAction,
   joinClassroomAction,
   joinSchoolAction,
-  postAnnouncementAction,
 } from "@/actions/school";
 
 export default async function StaffHomePage({ searchParams }: PageProps<"/school/staff">) {
@@ -61,7 +58,7 @@ export default async function StaffHomePage({ searchParams }: PageProps<"/school
 
   const school = staff.school;
   const isAdmin = school.adminId === userId;
-  const [classrooms, mySubjects, announcements, pendingStaff] = await Promise.all([
+  const [classrooms, mySubjects, pendingStaff] = await Promise.all([
     prisma.classroom.findMany({
       where: { schoolId: school.id },
       include: {
@@ -75,7 +72,6 @@ export default async function StaffHomePage({ searchParams }: PageProps<"/school
       include: { classroom: true },
       orderBy: [{ classroom: { name: "asc" } }, { name: "asc" }],
     }),
-    visibleAnnouncements(school.id, null, 10),
     isAdmin ? prisma.schoolStaff.count({ where: { schoolId: school.id, status: "PENDING" } }) : 0,
   ]);
   const joined = classrooms.filter((c) => c.teachers.length > 0);
@@ -86,9 +82,6 @@ export default async function StaffHomePage({ searchParams }: PageProps<"/school
     const s = mySubjects[0];
     redirect(`/school/staff/classrooms/${s.classroomId}/subjects/${s.id}`);
   }
-
-  const signed = await signSchoolFiles(announcements.map((a) => a.attachmentPath));
-  const schoolOnly = announcements.filter((a) => !a.classroomId);
 
   return (
     <div className="mx-auto max-w-4xl w-full px-4 py-8 space-y-6">
@@ -156,24 +149,6 @@ export default async function StaffHomePage({ searchParams }: PageProps<"/school
             <input name="name" placeholder="New classroom, e.g. 5-A" required className={`${fieldClass} flex-1`} />
           </SubmitForm>
         </div>
-      </Card>
-
-      <Card>
-        <SectionHeading title="📣 School announcements" />
-        {staff.canAnnounce && (
-          <div className="mb-4">
-            <SubmitForm action={postAnnouncementAction} submitLabel="Post to whole school">
-              <input type="hidden" name="scope" value="school" />
-              <textarea name="body" rows={2} required placeholder="Announcement for the whole school…" className={fieldClass} />
-              <input type="file" name="file" accept="application/pdf,image/*" className="text-sm" />
-            </SubmitForm>
-          </div>
-        )}
-        <AnnouncementList
-          items={schoolOnly}
-          signed={signed}
-          canDelete={(a) => a.authorId === userId || isAdmin}
-        />
       </Card>
     </div>
   );
