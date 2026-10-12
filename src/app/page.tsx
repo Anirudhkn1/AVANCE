@@ -21,7 +21,7 @@ export default async function LandingPage() {
           Institutions get visibility before deadlines become a crisis. Students always know
           what to do next. Nobody discovers the problem on submission day.
         </p>
-        <div className="mt-8 flex items-center justify-center gap-3">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           {user ? (
             // Through the profile picker, so you choose your own dashboard
             // or the School section — same as right after signing in.
@@ -47,6 +47,12 @@ export default async function LandingPage() {
               </Link>
             </>
           )}
+          <Link
+            href="/school"
+            className="rounded-lg border border-white/30 text-white px-5 py-2.5 text-sm font-medium hover:bg-white/10"
+          >
+            Avance Schools →
+          </Link>
         </div>
       </ForwardFieldHero>
 

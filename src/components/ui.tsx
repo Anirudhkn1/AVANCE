@@ -16,6 +16,7 @@ export function Card({
 }) {
   return (
     <div
+      data-card
       className={`rounded-2xl border border-border bg-surface shadow-sm ${padded ? "p-5" : ""} ${className}`}
     >
       {children}

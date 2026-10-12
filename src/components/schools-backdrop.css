@@ -1,0 +1,309 @@
+/* Motion and colour for schools-backdrop.tsx. Everything drifts slowly —
+   clouds, leaves, light — so the scenes feel alive without pulling the eye
+   off the page. Dark mode turns the same scenes into night. */
+
+.schools-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sb-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- Sky ---------- */
+
+.sb-sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #2f8fdc 0%, #5fb2ec 32%, #9fd5f6 62%, #d9f0fc 100%);
+}
+.schools[data-band="afternoon"] .sb-sky {
+  background: linear-gradient(180deg, #2f8fdc 0%, #62b4ec 36%, #a9d8f2 66%, #f3ecd6 100%);
+}
+.schools[data-band="evening"] .sb-sky {
+  background: linear-gradient(180deg, #3b7fd0 0%, #79b4e6 40%, #c6d6ea 70%, #f8d6b8 100%);
+}
+
+.sb-cloud {
+  position: absolute;
+  left: 0;
+  animation: sb-drift var(--dur) linear var(--delay) infinite;
+}
+.sb-cloud__art {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.sb-cloud__shade {
+  fill: #c6dcef;
+}
+.sb-cloud__body {
+  fill: #ffffff;
+}
+.sb-cloud__glow {
+  fill: #ffffff;
+  opacity: 0.9;
+}
+
+@keyframes sb-drift {
+  from {
+    translate: -50vw 0;
+  }
+  to {
+    translate: 105vw 0;
+  }
+}
+
+.sb-birds {
+  position: absolute;
+  left: 0;
+  top: 12vh;
+  width: 54px;
+  fill: none;
+  stroke: #24345a;
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.55;
+  animation: sb-birds 60s linear -22s infinite;
+}
+@keyframes sb-birds {
+  from {
+    translate: -10vw 6vh;
+  }
+  to {
+    translate: 110vw -4vh;
+  }
+}
+
+.sb-star {
+  position: absolute;
+  display: none;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #fff8dc;
+  animation: sb-twinkle 4s ease-in-out var(--delay) infinite alternate;
+}
+@keyframes sb-twinkle {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------- Scene motion ---------- */
+
+.sb-sway {
+  animation: sb-sway var(--dur, 8s) ease-in-out var(--delay, 0s) infinite alternate;
+}
+@keyframes sb-sway {
+  from {
+    rotate: -0.8deg;
+  }
+  to {
+    rotate: 0.8deg;
+  }
+}
+
+.sb-flag {
+  transform-origin: 802px 76px;
+  animation: sb-flag 2.4s ease-in-out infinite alternate;
+}
+@keyframes sb-flag {
+  from {
+    transform: skewY(-4deg) scaleX(0.94);
+  }
+  to {
+    transform: skewY(5deg) scaleX(1.02);
+  }
+}
+
+.sb-dapple {
+  animation: sb-dapple 9s ease-in-out infinite alternate;
+}
+@keyframes sb-dapple {
+  from {
+    translate: -6px 0;
+    opacity: 0.85;
+  }
+  to {
+    translate: 8px 2px;
+    opacity: 1;
+  }
+}
+
+.sb-lamp-glow {
+  opacity: 0;
+}
+
+/* Students walk up to the door, shrinking into the distance. */
+.sb-walker {
+  translate: var(--x0) var(--y0);
+  scale: var(--s0);
+  animation: sb-walk var(--dur) linear var(--delay) infinite;
+}
+@keyframes sb-walk {
+  0% {
+    translate: var(--x0) var(--y0);
+    scale: var(--s0);
+    opacity: 0;
+  }
+  6%,
+  86% {
+    opacity: 1;
+  }
+  100% {
+    translate: var(--x1) var(--y1);
+    scale: var(--s1);
+    opacity: 0;
+  }
+}
+.sb-leg,
+.sb-arm {
+  transform-origin: 0 0;
+  animation: sb-step 1.1s ease-in-out var(--delay, 0s) infinite alternate;
+}
+.sb-arm {
+  animation-name: sb-arm;
+}
+@keyframes sb-step {
+  from {
+    rotate: -16deg;
+  }
+  to {
+    rotate: 16deg;
+  }
+}
+@keyframes sb-arm {
+  from {
+    rotate: 14deg;
+  }
+  to {
+    rotate: -14deg;
+  }
+}
+
+/* Classroom sunlight breathes as clouds pass the sun. */
+.sb-sun {
+  animation: sb-sun 16s ease-in-out infinite alternate;
+}
+.sb-sun__patch {
+  fill: #ffe6a8;
+  opacity: 0.42;
+}
+.schools[data-band="evening"] .sb-sun__patch {
+  fill: #ffc98f;
+}
+@keyframes sb-sun {
+  from {
+    opacity: 0.7;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.sb-mote {
+  fill: #fffbe8;
+  opacity: 0;
+  animation: sb-mote 9s ease-in-out var(--delay) infinite;
+}
+@keyframes sb-mote {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+  }
+  30%,
+  70% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    translate: 24px -70px;
+  }
+}
+
+.sb-glass-top {
+  stop-color: #bfe6fa;
+}
+.sb-glass-bottom {
+  stop-color: #5a9fd0;
+}
+
+/* ---------- Night (dark mode) ---------- */
+
+@media (prefers-color-scheme: dark) {
+  .sb-sky,
+  .schools[data-band] .sb-sky {
+    background: linear-gradient(180deg, #070d24 0%, #111d45 45%, #24356b 100%);
+  }
+  .sb-star {
+    display: block;
+  }
+  .sb-cloud {
+    opacity: 0.35;
+  }
+  .sb-cloud__shade {
+    fill: #56648f;
+  }
+  .sb-cloud__body,
+  .sb-cloud__glow {
+    fill: #8d9cc4;
+  }
+  .sb-birds {
+    display: none;
+  }
+  .sb-scene {
+    filter: brightness(0.5) saturate(0.85);
+  }
+  /* Lights on inside the school. */
+  .sb-glass-top {
+    stop-color: #ffe7a3;
+  }
+  .sb-glass-bottom {
+    stop-color: #f0a94a;
+  }
+  .sb-lamp-glow {
+    opacity: 0.6;
+  }
+  .sb-sun,
+  .sb-sun-bars,
+  .sb-mote,
+  .sb-walker,
+  .sb-dapple {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Clouds hold still where their negative delays spread them. */
+  .sb-cloud {
+    animation-play-state: paused;
+  }
+  .sb-birds,
+  .sb-star,
+  .sb-sway,
+  .sb-flag,
+  .sb-dapple,
+  .sb-walker,
+  .sb-leg,
+  .sb-arm,
+  .sb-sun,
+  .sb-mote {
+    animation: none;
+  }
+  .sb-walker,
+  .sb-mote,
+  .sb-birds {
+    display: none;
+  }
+}

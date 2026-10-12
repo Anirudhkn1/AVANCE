@@ -1,0 +1,749 @@
+/* Character stage (character-stage.tsx). The frame has the artwork's exact
+   aspect ratio, so every effect layer is positioned in % of the picture.
+   Cycle lengths of the set pieces (haki 7s, surge 6s, storm 9s) are mirrored
+   in character-stage-fx.ts so the particle bursts land with the CSS. */
+
+.cstage {
+  --ar: 1;
+  --cs-accent: #ffd166;
+  position: relative;
+  width: min(100%, calc(76vh * var(--ar)));
+  margin-inline: auto;
+}
+
+/* on phones the stage leads the profile page, so keep it from eating the screen */
+@media (max-width: 767px) {
+  .cstage {
+    width: min(100%, calc(54vh * var(--ar)));
+  }
+}
+
+.cstage__frame {
+  --px: 0;
+  --py: 0;
+  position: relative;
+  aspect-ratio: var(--ar);
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 1.25rem;
+  background: #05080f;
+  border: 2px solid color-mix(in srgb, var(--cs-accent) 75%, white 10%);
+  box-shadow:
+    0 22px 44px -18px color-mix(in srgb, var(--cs-accent) 65%, black),
+    0 0 0 5px color-mix(in srgb, var(--cs-accent) 18%, transparent);
+  touch-action: pan-y;
+}
+
+/* parallax carrier — the artwork overscans 3% so the nudge never shows an edge */
+.cstage__art {
+  position: absolute;
+  inset: -3%;
+  transform: translate3d(calc(var(--px) * -10px), calc(var(--py) * -8px), 0);
+  transition: transform 0.35s ease-out;
+}
+
+.cstage__stack {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 75%;
+  animation: cs-breathe 7s ease-in-out infinite;
+}
+
+.cstage__img {
+  object-fit: cover;
+}
+
+@keyframes cs-breathe {
+  0%,
+  100% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.028) translateY(-0.7%);
+  }
+}
+
+.cstage__fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform: translate3d(calc(var(--px) * 7px), calc(var(--py) * 5px), 0);
+  transition: transform 0.35s ease-out;
+}
+
+.cstage__fx > * {
+  position: absolute;
+  pointer-events: none;
+}
+
+.cstage__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.cstage__cap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+.cstage__name {
+  font-family: var(--font-schools-title), var(--font-sans), sans-serif;
+  font-size: 1.5rem;
+  line-height: 1.1;
+  color: var(--cs-accent);
+  -webkit-text-stroke: 0.5px rgb(0 0 0 / 0.25);
+}
+
+.cstage__epithet {
+  font-size: 0.8rem;
+  color: var(--muted, #5b6b85);
+}
+
+/* =========================================================================
+   Shanks — Conqueror's Haki
+   ========================================================================= */
+
+.cstage--haki .cstage__img {
+  animation: cs-haki-shake 7s linear infinite;
+}
+
+@keyframes cs-haki-shake {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  1.5% {
+    translate: -5px 2px;
+  }
+  2.5% {
+    translate: 6px -2px;
+  }
+  3.5% {
+    translate: -4px 1px;
+  }
+  4.5% {
+    translate: 3px 0;
+  }
+  6% {
+    translate: 0 0;
+  }
+}
+
+.cs-haki-clouds {
+  inset: 0;
+}
+
+.cs-haki-clouds::before,
+.cs-haki-clouds::after {
+  content: "";
+  position: absolute;
+  width: 95%;
+  height: 34%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(120 255 235 / 0.4), transparent);
+  filter: blur(14px);
+  mix-blend-mode: screen;
+  animation: cs-drift 16s ease-in-out infinite alternate;
+}
+
+.cs-haki-clouds::before {
+  top: 0;
+  left: -30%;
+}
+
+.cs-haki-clouds::after {
+  top: 26%;
+  right: -30%;
+  animation-duration: 22s;
+  animation-direction: alternate-reverse;
+}
+
+@keyframes cs-drift {
+  from {
+    transform: translateX(-10%);
+  }
+  to {
+    transform: translateX(14%);
+  }
+}
+
+.cs-haki-vignette {
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 42%, transparent 32%, rgb(70 0 14 / 0.6) 100%);
+  animation: cs-haki-vig 7s ease-in-out infinite;
+}
+
+@keyframes cs-haki-vig {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  3% {
+    opacity: 1;
+  }
+  30% {
+    opacity: 0.7;
+  }
+}
+
+.cs-haki-ring {
+  left: 50%;
+  top: 40%;
+  width: 30%;
+  aspect-ratio: 1;
+  margin: -15% 0 0 -15%;
+  border-radius: 50%;
+  border: 3px solid rgb(255 70 80 / 0.9);
+  box-shadow:
+    0 0 20px rgb(230 40 60 / 0.8),
+    inset 0 0 20px rgb(0 0 0 / 0.7);
+  opacity: 0;
+  animation: cs-ring 7s ease-out infinite;
+}
+
+@keyframes cs-ring {
+  0% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  1% {
+    opacity: 0.95;
+  }
+  14%,
+  100% {
+    transform: scale(3.6);
+    opacity: 0;
+  }
+}
+
+.cs-haki-bolts {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cs-haki-bolts g {
+  opacity: 0;
+  animation: cs-haki-bolt 7s linear infinite;
+}
+
+@keyframes cs-haki-bolt {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  1.2% {
+    opacity: 1;
+  }
+  2.4% {
+    opacity: 0.2;
+  }
+  3.4% {
+    opacity: 1;
+  }
+  5% {
+    opacity: 0;
+  }
+  52% {
+    opacity: 0;
+  }
+  53% {
+    opacity: 0.85;
+  }
+  54% {
+    opacity: 0;
+  }
+  55.5% {
+    opacity: 0.7;
+  }
+  56.5% {
+    opacity: 0;
+  }
+}
+
+.cs-haki-bolt-glow {
+  stroke: rgb(255 30 60 / 0.55);
+  stroke-width: 2.4;
+  filter: blur(1.2px);
+}
+
+.cs-haki-bolt-core {
+  stroke: #ff5560;
+  stroke-width: 0.9;
+}
+
+.cs-haki-flash {
+  inset: 0;
+  background: radial-gradient(circle at 50% 40%, rgb(255 255 255 / 0.5), rgb(255 30 50 / 0.55) 60%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  animation: cs-haki-flash 7s linear infinite;
+}
+
+@keyframes cs-haki-flash {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  1.4% {
+    opacity: 0.9;
+  }
+  3.5% {
+    opacity: 0.1;
+  }
+  5% {
+    opacity: 0.5;
+  }
+  11% {
+    opacity: 0;
+  }
+}
+
+/* =========================================================================
+   Sanji — blue flames
+   ========================================================================= */
+
+.cstage--blueflame .cstage__img {
+  animation: cs-sway 9s ease-in-out infinite alternate;
+  transform-origin: 50% 90%;
+}
+
+@keyframes cs-sway {
+  from {
+    rotate: -0.7deg;
+  }
+  to {
+    rotate: 0.7deg;
+  }
+}
+
+.cs-blue-edge {
+  inset: 0;
+  box-shadow: inset 0 0 70px 6px rgb(40 140 255 / 0.5);
+  mix-blend-mode: screen;
+  animation: cs-edge 3.6s ease-in-out infinite;
+}
+
+@keyframes cs-edge {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.cs-blue-surge {
+  left: -10%;
+  right: -10%;
+  bottom: -6%;
+  height: 36%;
+  background: radial-gradient(ellipse at 50% 100%, rgb(70 170 255 / 0.75), rgb(30 90 255 / 0.28) 52%, transparent 74%);
+  mix-blend-mode: screen;
+  transform-origin: 50% 100%;
+  animation: cs-surge 6s ease-in-out infinite;
+}
+
+@keyframes cs-surge {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scaleY(0.9);
+  }
+  4% {
+    opacity: 1;
+    transform: scaleY(1.35);
+  }
+  25% {
+    opacity: 0.55;
+    transform: scaleY(1);
+  }
+}
+
+.cs-blue-eye {
+  left: 70%;
+  top: 41.6%;
+  width: 34%;
+  aspect-ratio: 1;
+  margin: -17% 0 0 -17%;
+  background: radial-gradient(closest-side, rgb(185 240 255 / 0.9), rgb(60 170 255 / 0.38) 45%, transparent 72%);
+  mix-blend-mode: screen;
+  animation: cs-eye 2.8s ease-in-out infinite;
+}
+
+@keyframes cs-eye {
+  0%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+.cs-blue-ember {
+  left: 28%;
+  top: 66.7%;
+  width: 13%;
+  aspect-ratio: 1;
+  margin: -6.5% 0 0 -6.5%;
+  background: radial-gradient(closest-side, rgb(255 190 90 / 0.95), rgb(255 110 20 / 0.4) 50%, transparent 75%);
+  mix-blend-mode: screen;
+  animation: cs-cig 3.6s ease-in-out infinite;
+}
+
+@keyframes cs-cig {
+  0%,
+  55%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.45;
+  }
+  72% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+}
+
+/* =========================================================================
+   Nami — sky, wind and a little thunder
+   ========================================================================= */
+
+.cs-hair {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: radial-gradient(ellipse 25% 24% at 78% 30%, #000 45%, transparent 100%);
+  mask-image: radial-gradient(ellipse 25% 24% at 78% 30%, #000 45%, transparent 100%);
+  transform-origin: 48% 12%;
+  animation: cs-hair 4.6s ease-in-out infinite alternate;
+}
+
+@keyframes cs-hair {
+  from {
+    transform: rotate(-1.5deg) translateX(-0.4%);
+  }
+  to {
+    transform: rotate(2deg) translateX(0.6%);
+  }
+}
+
+.cs-cloud {
+  height: 5%;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.7);
+  filter: blur(7px);
+  animation: cs-cloud 38s linear infinite;
+}
+
+.cs-cloud--a {
+  top: 8%;
+  left: -40%;
+  width: 40%;
+}
+
+.cs-cloud--b {
+  top: 44%;
+  left: -40%;
+  width: 30%;
+  opacity: 0.75;
+  animation-duration: 52s;
+  animation-delay: -20s;
+}
+
+.cs-cloud--c {
+  top: 78%;
+  left: -40%;
+  width: 34%;
+  opacity: 0.6;
+  animation-duration: 46s;
+  animation-delay: -8s;
+}
+
+@keyframes cs-cloud {
+  to {
+    transform: translateX(380%);
+  }
+}
+
+.cs-wind {
+  left: -30%;
+  width: 28%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.9), transparent);
+  rotate: -6deg;
+  opacity: 0;
+  animation: cs-wind 4.2s ease-in infinite;
+}
+
+@keyframes cs-wind {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.8;
+  }
+  80% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateX(470%);
+    opacity: 0;
+  }
+}
+
+.cs-storm-cloud {
+  top: -5%;
+  left: 36%;
+  width: 70%;
+  height: 24%;
+  background: radial-gradient(closest-side, rgb(60 68 98 / 0.95), transparent);
+  filter: blur(8px);
+  opacity: 0;
+  animation: cs-storm 9s ease-in-out 0.8s infinite;
+}
+
+@keyframes cs-storm {
+  0%,
+  22%,
+  100% {
+    opacity: 0;
+  }
+  3%,
+  16% {
+    opacity: 0.95;
+  }
+}
+
+.cs-storm-bolt {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  animation: cs-bolt 9s linear 0.8s infinite;
+}
+
+@keyframes cs-bolt {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  4% {
+    opacity: 1;
+  }
+  5.5% {
+    opacity: 0.15;
+  }
+  7% {
+    opacity: 1;
+  }
+  9.5% {
+    opacity: 0;
+  }
+}
+
+.cs-storm-bolt-glow {
+  stroke: rgb(255 230 90 / 0.7);
+  stroke-width: 3.2;
+  filter: blur(1.6px);
+}
+
+.cs-storm-bolt-core {
+  stroke: #fffbe0;
+  stroke-width: 1;
+}
+
+.cs-storm-flash {
+  inset: 0;
+  background: rgb(255 248 200);
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  animation: cs-flash 9s linear 0.8s infinite;
+}
+
+@keyframes cs-flash {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  4% {
+    opacity: 0.45;
+  }
+  6% {
+    opacity: 0.1;
+  }
+  7% {
+    opacity: 0.4;
+  }
+  11% {
+    opacity: 0;
+  }
+}
+
+.cs-glint {
+  left: 33%;
+  top: 61.7%;
+  width: 11%;
+  aspect-ratio: 1;
+  margin: -5.5% 0 0 -5.5%;
+  background:
+    linear-gradient(90deg, transparent 38%, #fff 50%, transparent 62%) center / 100% 14% no-repeat,
+    linear-gradient(0deg, transparent 38%, #fff 50%, transparent 62%) center / 14% 100% no-repeat;
+  filter: drop-shadow(0 0 4px #fff);
+  transform: scale(0) rotate(0deg);
+  animation: cs-twinkle 3.4s ease-in-out infinite;
+}
+
+@keyframes cs-twinkle {
+  0%,
+  60%,
+  100% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  75% {
+    transform: scale(1) rotate(45deg);
+    opacity: 1;
+  }
+}
+
+/* =========================================================================
+   Luffy — sunrise on the Grand Line
+   ========================================================================= */
+
+.cstage--sunrise .cstage__img {
+  animation: cs-wind-lift 8s ease-in-out infinite alternate;
+  transform-origin: 50% 85%;
+}
+
+@keyframes cs-wind-lift {
+  from {
+    rotate: -0.5deg;
+  }
+  to {
+    rotate: 0.6deg;
+  }
+}
+
+.cs-rays {
+  left: -100%;
+  top: -100%;
+  width: 200%;
+  height: 200%;
+  background: repeating-conic-gradient(from 0deg at 50% 50%, rgb(255 240 190 / 0.5) 0 5deg, transparent 5deg 15deg);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0%, transparent 34%);
+  mask-image: radial-gradient(circle at 50% 50%, #000 0%, transparent 34%);
+  mix-blend-mode: screen;
+  animation: cs-spin 70s linear infinite;
+}
+
+@keyframes cs-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cs-aura {
+  left: 55%;
+  top: 50%;
+  width: 95%;
+  aspect-ratio: 1;
+  margin: -47% 0 0 -47%;
+  background: radial-gradient(closest-side, rgb(255 220 120 / 0.5), rgb(255 190 80 / 0.18) 55%, transparent);
+  mix-blend-mode: screen;
+  animation: cs-aura 4.4s ease-in-out infinite;
+}
+
+@keyframes cs-aura {
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+.cs-shine {
+  left: 8%;
+  top: 17%;
+  width: 90%;
+  height: 38%;
+  overflow: hidden;
+  border-radius: 50% 50% 18% 18% / 70% 70% 20% 20%;
+}
+
+.cs-shine::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 60%;
+  background: linear-gradient(105deg, transparent 20%, rgb(255 255 225 / 0.7) 50%, transparent 80%);
+  mix-blend-mode: overlay;
+  transform: translateX(-120%);
+  animation: cs-shine 5.5s ease-in-out infinite;
+}
+
+@keyframes cs-shine {
+  0%,
+  35% {
+    transform: translateX(-120%);
+  }
+  75%,
+  100% {
+    transform: translateX(260%);
+  }
+}
+
+.cs-drum {
+  left: 52%;
+  top: 66%;
+  width: 52%;
+  aspect-ratio: 1;
+  margin: -26% 0 0 -26%;
+  border-radius: 50%;
+  border: 2px solid rgb(255 232 150 / 0.85);
+  box-shadow: 0 0 16px rgb(255 214 102 / 0.6);
+  opacity: 0;
+  animation: cs-drum 2.4s ease-out infinite;
+}
+
+@keyframes cs-drum {
+  0% {
+    transform: scale(0.3);
+    opacity: 0.9;
+  }
+  65%,
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cstage *,
+  .cstage *::before,
+  .cstage *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,0 +1,377 @@
+/* The Voyage map (voyage.tsx). A fixed sea palette — it looks the same in the
+   light and dark school themes. Everything that moves is CSS. */
+
+.voyage {
+  overflow: hidden;
+  border-radius: 1.25rem;
+  background: linear-gradient(180deg, #0b3a6b 0%, #0f5fa8 100%);
+  color: #fff;
+  box-shadow: 0 10px 30px -12px rgb(7 38 82 / 0.6);
+  border: 1px solid rgb(255 255 255 / 0.18);
+}
+
+.voyage__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.15rem 0.6rem;
+}
+
+.voyage__title {
+  font-size: 1.3rem;
+  line-height: 1.1;
+  color: #fff;
+  text-shadow: 0 2px 0 rgb(0 0 0 / 0.25);
+}
+
+.voyage__sub {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  color: rgb(255 255 255 / 0.85);
+}
+
+.voyage__sub b {
+  color: #ffd166;
+}
+
+.voyage__level {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 4.2rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 0.9rem;
+  background: rgb(255 255 255 / 0.14);
+  line-height: 1.1;
+}
+
+.voyage__level span {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.voyage__level b {
+  font-size: 1.6rem;
+  color: #ffd166;
+}
+
+.voyage__level small {
+  font-size: 0.68rem;
+  opacity: 0.85;
+}
+
+.voyage .voyage__bar {
+  margin: 0 1.15rem 0.5rem;
+  background: rgb(255 255 255 / 0.2);
+  width: auto;
+}
+
+.voyage .voyage__bar > div {
+  background: linear-gradient(90deg, #ffb703, #ffd166);
+}
+
+.voyage__scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.4) transparent;
+}
+
+.voyage__map {
+  position: relative;
+  width: 100%;
+  background: linear-gradient(180deg, #67bdfc 0%, #2f8fe0 40%, #0f5fa8 100%);
+}
+
+/* --- sea ------------------------------------------------------------------ */
+
+.voyage__waves {
+  position: absolute;
+  inset: 0;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='16'%3E%3Cpath d='M0 9 Q15 0 30 9 T60 9' fill='none' stroke='white' stroke-opacity='.4' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='16'%3E%3Cpath d='M0 9 Q15 0 30 9 T60 9' fill='none' stroke='white' stroke-opacity='.25' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='16'%3E%3Cpath d='M0 9 Q15 0 30 9 T60 9' fill='none' stroke='white' stroke-opacity='.3' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-size: 90px 24px, 130px 30px, 70px 20px;
+  background-position: 0 38%, 40px 62%, 18px 88%;
+  animation: voyage-waves 18s linear infinite;
+}
+
+@keyframes voyage-waves {
+  to {
+    background-position: 270px 38%, -480px 62%, 228px 88%;
+  }
+}
+
+.voyage__cloud {
+  position: absolute;
+  height: 26px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.75);
+  filter: blur(5px);
+  animation: voyage-cloud 60s linear infinite;
+}
+
+.voyage__cloud--a {
+  top: 8%;
+  left: -12%;
+  width: 150px;
+}
+
+.voyage__cloud--b {
+  top: 24%;
+  left: -12%;
+  width: 100px;
+  opacity: 0.7;
+  animation-duration: 90s;
+  animation-delay: -35s;
+}
+
+@keyframes voyage-cloud {
+  to {
+    transform: translateX(1100px);
+  }
+}
+
+/* --- route ---------------------------------------------------------------- */
+
+.voyage__route {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.voyage__route path {
+  vector-effect: non-scaling-stroke;
+}
+
+.voyage__route-ahead {
+  stroke: rgb(255 255 255 / 0.55);
+  stroke-width: 4;
+  stroke-dasharray: 1 11;
+}
+
+.voyage__route-sailed {
+  stroke: #ffd166;
+  stroke-width: 5;
+  stroke-dasharray: 12 8;
+  filter: drop-shadow(0 0 4px rgb(255 209 102 / 0.8));
+  animation: voyage-march 1.6s linear infinite;
+}
+
+@keyframes voyage-march {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+/* --- islands -------------------------------------------------------------- */
+
+.voyage__node {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: transform 0.2s ease;
+}
+
+.voyage__label {
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+  line-height: 1.2;
+  text-shadow: 0 1px 4px rgb(0 0 0 / 0.7);
+}
+
+.voyage__label b {
+  display: block;
+  font-size: 0.82rem;
+  color: #fff;
+}
+
+.voyage__label small {
+  font-size: 0.68rem;
+  color: rgb(255 255 255 / 0.85);
+}
+
+.voyage__node--hero {
+  border: 3px solid var(--accent-hero, #ffd166);
+  background: #0b3a6b;
+  box-shadow:
+    0 0 0 4px rgb(255 255 255 / 0.35),
+    0 8px 16px rgb(0 0 0 / 0.35);
+  cursor: pointer;
+}
+
+.voyage__node--hero:hover,
+.voyage__node--hero:focus-visible {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.voyage__node--hero img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.voyage__worn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffd166;
+  color: #7a4b00;
+  font-size: 0.8rem;
+  font-style: normal;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.4);
+}
+
+.voyage__node--locked {
+  background: rgb(6 28 58 / 0.7);
+  border: 3px dashed rgb(255 255 255 / 0.55);
+}
+
+.voyage__silhouette {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  filter: brightness(0) opacity(0.7);
+}
+
+.voyage__lock {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #0b3a6b;
+  border: 2px solid rgb(255 255 255 / 0.6);
+  font-size: 0.7rem;
+  font-style: normal;
+}
+
+.voyage__node--mile {
+  background: rgb(255 255 255 / 0.2);
+  border: 3px solid rgb(255 255 255 / 0.55);
+  width: 58px;
+  height: 58px;
+}
+
+.voyage__node--mile.is-reached {
+  background: #ffd166;
+  border-color: #fff;
+  box-shadow: 0 6px 14px rgb(0 0 0 / 0.3);
+}
+
+.voyage__icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.voyage__node.is-next::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 3px solid #ffd166;
+  animation: voyage-next 1.8s ease-out infinite;
+}
+
+@keyframes voyage-next {
+  from {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* --- the ship ------------------------------------------------------------- */
+
+.voyage__ship {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -112%);
+  pointer-events: none;
+  transition: left 0.6s ease, top 0.6s ease;
+}
+
+.voyage__ship-hull {
+  display: block;
+  font-size: 2.1rem;
+  line-height: 1;
+  filter: drop-shadow(0 4px 4px rgb(0 0 0 / 0.35));
+  transform-origin: 50% 100%;
+  animation: voyage-bob 3.2s ease-in-out infinite;
+}
+
+.voyage__wake {
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 52px;
+  height: 9px;
+  margin-left: -26px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.55);
+  filter: blur(2px);
+  animation: voyage-wake 3.2s ease-in-out infinite;
+}
+
+@keyframes voyage-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(4deg);
+  }
+}
+
+@keyframes voyage-wake {
+  0%,
+  100% {
+    transform: scaleX(0.8);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scaleX(1.15);
+    opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voyage *,
+  .voyage *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

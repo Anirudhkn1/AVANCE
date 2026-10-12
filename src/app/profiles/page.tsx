@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireSessionUser } from "@/lib/session";
 import { Avatar } from "@/components/ui";
+import { ClassroomScene } from "@/components/classroom-scene";
 
 // Netflix-style "who's using Avance?" picker shown after every sign-in.
 export default async function ProfilesPage() {
@@ -12,10 +13,9 @@ export default async function ProfilesPage() {
         <ProfileTile href="/dashboard" label={user.name}>
           <Avatar seed={user.avatarSeed} size="lg" />
         </ProfileTile>
-        <ProfileTile href="/school" label="School">
-          <span className="text-5xl" aria-hidden>
-            🎒
-          </span>
+        <ProfileTile href="/school" label="Avance Schools">
+          {/* A crop of the Avance Schools classroom: the teacher, grinning. */}
+          <ClassroomScene viewBox="405 222 240 240" className="rounded-[14px]" />
         </ProfileTile>
       </div>
     </div>

@@ -15,7 +15,7 @@ function periodStart(period: Period) {
 function approvedKids(classroomId: string) {
   return prisma.kidProfile.findMany({
     where: { classroomId, classroomStatus: "APPROVED" },
-    select: { id: true, name: true, avatarSeed: true, xp: true },
+    select: { id: true, name: true, avatarSeed: true, xp: true, characterId: true },
     orderBy: { name: "asc" },
   });
 }

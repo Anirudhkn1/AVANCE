@@ -8,8 +8,8 @@ import { prisma } from "@/lib/prisma";
 import { randomCode } from "@/lib/codes";
 import { randomAvatarValue } from "@/lib/avatar";
 import { requireUser, AuthError, ForbiddenError } from "@/lib/permissions";
+import { characterById, isUnlocked } from "@/lib/voyage";
 import {
-  HOMEWORK_XP,
   actionAdmin,
   actionClassroom,
   actionKid,
@@ -97,7 +97,7 @@ export async function kidJoinClassroomAction(_prev: FormResult, fd: FormData): P
   });
 }
 
-/** Marks homework done (+XP), or undoes it if it was marked done today (IST). */
+/** Marks homework done (+its XP), or undoes it if it was marked done today (IST). */
 export async function toggleHomeworkAction(kidId: string, homeworkId: string) {
   const { kid } = await actionKid(kidId);
   const homework = await prisma.homework.findUnique({ where: { id: homeworkId }, include: { subject: true } });
@@ -111,20 +111,31 @@ export async function toggleHomeworkAction(kidId: string, homeworkId: string) {
     if (istDay(existing.completedAt) !== istDay()) return; // locked after midnight
     await prisma.$transaction([
       prisma.homeworkCompletion.delete({ where: { id: existing.id } }),
-      prisma.kidProfile.update({ where: { id: kidId }, data: { xp: { decrement: HOMEWORK_XP } } }),
+      prisma.kidProfile.update({ where: { id: kidId }, data: { xp: { decrement: homework.xp } } }),
     ]);
   } else {
     const now = new Date();
     try {
       await prisma.$transaction([
         prisma.homeworkCompletion.create({ data: { homeworkId, kidId, completedAt: now, late: now > homework.dueDate } }),
-        prisma.kidProfile.update({ where: { id: kidId }, data: { xp: { increment: HOMEWORK_XP } } }),
+        prisma.kidProfile.update({ where: { id: kidId }, data: { xp: { increment: homework.xp } } }),
       ]);
     } catch (e) {
       // A double tap already recorded it — the unique constraint rolled this one back, XP included.
       if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")) throw e;
     }
   }
+  revalidateSchool();
+}
+
+/** Wears an unlocked Voyage hero as the kid's profile picture (null = back to the avatar). */
+export async function setCharacterAction(kidId: string, characterId: string | null) {
+  const { kid } = await actionKid(kidId);
+  if (characterId !== null) {
+    const character = characterById(characterId);
+    if (!character || !isUnlocked(character, kid.xp)) throw new ForbiddenError("That hero hasn't joined your crew yet.");
+  }
+  await prisma.kidProfile.update({ where: { id: kid.id }, data: { characterId } });
   revalidateSchool();
 }
 
@@ -366,10 +377,16 @@ const homeworkSchema = z.object({
   title: z.string().trim().min(1, "Give the homework a title.").max(120),
   description: z.string().trim().max(2000),
   dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a due date."),
+  xp: z.coerce.number().int().min(1, "Pick 1, 2 or 3 XP.").max(3, "Pick 1, 2 or 3 XP."),
 });
 
 function parseHomework(fd: FormData) {
-  return homeworkSchema.safeParse({ title: fd.get("title"), description: fd.get("description") ?? "", dueDate: fd.get("dueDate") });
+  return homeworkSchema.safeParse({
+    title: fd.get("title"),
+    description: fd.get("description") ?? "",
+    dueDate: fd.get("dueDate"),
+    xp: fd.get("xp") ?? 1,
+  });
 }
 
 export async function createHomeworkAction(_prev: FormResult, fd: FormData): Promise<FormResult> {
@@ -378,7 +395,13 @@ export async function createHomeworkAction(_prev: FormResult, fd: FormData): Pro
     const parsed = parseHomework(fd);
     if (!parsed.success) return parsed.error.issues[0]?.message;
     await prisma.homework.create({
-      data: { subjectId: subject.id, title: parsed.data.title, description: parsed.data.description, dueDate: istDayEnd(parsed.data.dueDate) },
+      data: {
+        subjectId: subject.id,
+        title: parsed.data.title,
+        description: parsed.data.description,
+        dueDate: istDayEnd(parsed.data.dueDate),
+        xp: parsed.data.xp,
+      },
     });
     revalidateSchool();
   });
@@ -391,10 +414,27 @@ export async function updateHomeworkAction(_prev: FormResult, fd: FormData): Pro
     await actionSubject(homework.subjectId);
     const parsed = parseHomework(fd);
     if (!parsed.success) return parsed.error.issues[0]?.message;
-    await prisma.homework.update({
-      where: { id: homework.id },
-      data: { title: parsed.data.title, description: parsed.data.description, dueDate: istDayEnd(parsed.data.dueDate) },
-    });
+    // Changing the reward re-prices it for the kids who already finished it too.
+    const delta = parsed.data.xp - homework.xp;
+    await prisma.$transaction([
+      prisma.homework.update({
+        where: { id: homework.id },
+        data: {
+          title: parsed.data.title,
+          description: parsed.data.description,
+          dueDate: istDayEnd(parsed.data.dueDate),
+          xp: parsed.data.xp,
+        },
+      }),
+      ...(delta === 0
+        ? []
+        : [
+            prisma.kidProfile.updateMany({
+              where: { completions: { some: { homeworkId: homework.id } } },
+              data: { xp: { increment: delta } },
+            }),
+          ]),
+    ]);
     revalidateSchool();
   });
 }
@@ -410,7 +450,7 @@ export async function deleteHomeworkAction(homeworkId: string) {
   await prisma.$transaction([
     prisma.kidProfile.updateMany({
       where: { id: { in: homework.completions.map((c) => c.kidId) } },
-      data: { xp: { decrement: HOMEWORK_XP } },
+      data: { xp: { decrement: homework.xp } },
     }),
     prisma.homework.delete({ where: { id: homeworkId } }),
   ]);

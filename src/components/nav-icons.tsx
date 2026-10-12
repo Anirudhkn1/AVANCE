@@ -94,3 +94,30 @@ export function SignOutIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function FlaskIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M9 3h6M10 3v6L4.6 18.2A2 2 0 0 0 6.3 21h11.4a2 2 0 0 0 1.7-2.8L14 9V3" />
+      <path d="M7.4 15h9.2" />
+    </Icon>
+  );
+}
+
+export function MegaphoneIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M3 10.5v3a1 1 0 0 0 1 1h2.5L14 18.5V5.5L6.5 9.5H4a1 1 0 0 0-1 1Z" />
+      <path d="M17.5 9a4 4 0 0 1 0 6M7 14.5l1.2 5h2.6l-.8-4" />
+    </Icon>
+  );
+}
+
+export function ClipboardIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="5.5" y="4.5" width="13" height="17" rx="2" />
+      <path d="M9 4.5V3.5h6v1M9 10h6M9 14h6M9 18h3" />
+    </Icon>
+  );
+}

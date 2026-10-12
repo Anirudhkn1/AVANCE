@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Avatar } from "@/components/avatar";
-import { CornerSpider } from "@/components/corner-spider";
 import { Logo } from "@/components/logo";
 import { BellIcon } from "@/components/nav-icons";
 import { AccountMenu, MobileDock, NavLinks, NavShell } from "@/components/navbar-client";
@@ -85,8 +84,6 @@ export function Navbar({
       {/* Outside the header on purpose: the header slides away with a
           transform, which would re-anchor a position:fixed child to it. */}
       {user && <MobileDock />}
-      {/* Student section only — it decides that itself from the route. */}
-      {user && <CornerSpider />}
     </>
   );
 }

@@ -16,7 +16,14 @@ export async function loginAction(_prevState: string | undefined, formData: Form
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return "Incorrect email or password.";
 
-  redirect("/profiles");
+  redirect(nextPath(formData));
+}
+
+// Where to land after signing in or up — e.g. back into Avance Schools. Only
+// a same-site path ("/school/enter"), never "//evil.com" or a full URL.
+function nextPath(formData: FormData) {
+  const next = String(formData.get("next") ?? "");
+  return /^\/(?![/\\])/.test(next) ? next : "/profiles";
 }
 
 const registerSchema = z.object({
@@ -70,7 +77,7 @@ export async function registerAction(_prevState: string | undefined, formData: F
   const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
   if (signInError) return "Account created — please sign in.";
 
-  redirect("/profiles");
+  redirect(nextPath(formData));
 }
 
 export async function logoutAction() {

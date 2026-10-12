@@ -1,0 +1,427 @@
+/* Elixir — the potion flask and the "brewing room" it lives in. Imported by
+   elixir-flask.tsx. The stage is deliberately a dark violet panel in both
+   light and dark mode: a little magic lab inside the sky-blue school. */
+
+/* ---------- Flask ---------- */
+
+.elixir-flask {
+  display: block;
+  overflow: visible;
+  width: 100%;
+  height: auto;
+}
+
+@keyframes elixir-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+.elixir-flask__glow {
+  transform-origin: 100px 170px;
+  animation: elixir-glow 3.4s ease-in-out infinite;
+}
+.elixir-flask.is-full .elixir-flask__glow {
+  animation-duration: 1.6s;
+}
+
+/* The potion level glides to its new height whenever `fill` changes. */
+.elixir-flask__liquid {
+  transition: transform 1100ms cubic-bezier(0.3, 0.9, 0.3, 1);
+}
+
+@keyframes elixir-wave {
+  to {
+    transform: translateX(-100px);
+  }
+}
+.elixir-flask__wave-a {
+  animation: elixir-wave 4.6s linear infinite;
+}
+.elixir-flask__wave-b {
+  animation: elixir-wave 3.1s linear infinite reverse;
+}
+.elixir-flask--mini .elixir-flask__wave-a,
+.elixir-flask--mini .elixir-flask__wave-b {
+  animation: none;
+}
+
+@keyframes elixir-rise {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(-150px);
+    opacity: 0;
+  }
+}
+.elixir-flask__bubble {
+  fill: rgba(255, 255, 255, 0.7);
+  animation: elixir-rise var(--t, 4s) ease-in var(--d, 0s) infinite;
+}
+
+@keyframes elixir-twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    scale: 0.4;
+  }
+  50% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+.elixir-flask__star {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: elixir-twinkle 2.6s ease-in-out var(--d, 0s) infinite;
+}
+
+/* One review = one drop falls into the neck and the surface ripples. */
+@keyframes elixir-drop {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(var(--fall, 150px));
+    opacity: 0;
+  }
+}
+.elixir-flask__drop {
+  animation: elixir-drop 620ms cubic-bezier(0.55, 0, 1, 0.6) both;
+}
+
+@keyframes elixir-splash {
+  0% {
+    opacity: 0;
+    transform: scale(0.2, 0.2);
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.2, 1.6);
+  }
+}
+.elixir-flask__splash {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: elixir-splash 700ms ease-out 560ms both;
+}
+
+/* ---------- Shelf of brewed flasks ---------- */
+
+.elixir-shelf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.35rem 0.55rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 5px solid #6b4423;
+  border-radius: 0 0 3px 3px;
+}
+.elixir-shelf__flask {
+  width: 2.3rem;
+  filter: drop-shadow(0 0 6px rgba(255, 123, 232, 0.5));
+}
+.elixir-shelf__more {
+  align-self: center;
+  font-weight: 800;
+  color: #ffd2f7;
+}
+
+/* ---------- The brewing room ---------- */
+
+.elixir-stage {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 1.5rem;
+  border: 2.5px solid var(--ink, #1d2f52);
+  box-shadow: 4px 5px 0 var(--card-shadow, #1d2f52);
+  color: #fbeaff;
+  background:
+    radial-gradient(60% 55% at 22% 38%, rgba(190, 80, 255, 0.4), transparent 70%),
+    radial-gradient(45% 40% at 85% 12%, rgba(90, 160, 255, 0.28), transparent 70%),
+    linear-gradient(165deg, #2a1262 0%, #170a3d 60%, #10072b 100%);
+}
+/* Dust motes drifting up through the room. */
+.elixir-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.55) 0 1.5px, transparent 2px),
+    radial-gradient(circle, rgba(255, 190, 245, 0.45) 0 1.2px, transparent 2px);
+  background-size:
+    90px 110px,
+    140px 170px;
+  background-position:
+    0 0,
+    40px 60px;
+  animation: elixir-motes 26s linear infinite;
+}
+@keyframes elixir-motes {
+  to {
+    background-position:
+      0 -220px,
+      40px -280px;
+  }
+}
+
+.elixir-stage h1,
+.elixir-stage h2,
+.elixir-stage h3 {
+  color: #fff;
+}
+.elixir-stage .elixir-muted {
+  color: #cdb8f5;
+}
+
+.elixir-stat {
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 0.55rem 0.9rem;
+}
+
+.elixir-meter {
+  height: 0.7rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+.elixir-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff7be8, #9d4dff);
+  transition: width 900ms cubic-bezier(0.3, 0.9, 0.3, 1);
+}
+
+.elixir-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  padding: 0.8rem 1.8rem;
+  font-family: var(--font-schools-heading), var(--font-sans), sans-serif;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: #2a0a4a;
+  background: linear-gradient(180deg, #ffa8f3, #d86bff);
+  border: 3px solid var(--ink, #1d2f52);
+  box-shadow: 0 5px 0 var(--ink, #1d2f52);
+  transition:
+    transform 120ms,
+    box-shadow 120ms;
+}
+.elixir-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 var(--ink, #1d2f52);
+}
+.elixir-cta:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--ink, #1d2f52);
+}
+.elixir-cta:disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.elixir-ghost {
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+}
+.elixir-ghost:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ---------- A card being brewed ---------- */
+
+.elixir-card {
+  perspective: 1200px;
+  width: 100%;
+}
+.elixir-card__inner {
+  position: relative;
+  min-height: 12.5rem;
+  transform-style: preserve-3d;
+  transition: transform 520ms cubic-bezier(0.3, 0.8, 0.3, 1);
+}
+.elixir-card.is-flipped .elixir-card__inner {
+  transform: rotateY(180deg);
+}
+.elixir-card__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 1.2rem 1.1rem;
+  text-align: center;
+  border-radius: 1.25rem;
+  border: 2.5px solid var(--ink, #1d2f52);
+  box-shadow: 0 5px 0 var(--ink, #1d2f52);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  color: #2a0a4a;
+  background: linear-gradient(180deg, #fff7ff, #f3deff);
+  overflow: auto;
+}
+.elixir-card__face--back {
+  transform: rotateY(180deg);
+  background: linear-gradient(180deg, #f2ffe9, #d4f7c4);
+}
+.elixir-card__tag {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.elixir-card__text {
+  font-family: var(--font-schools-heading), var(--font-sans), sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.15rem, 3.4vw, 1.6rem);
+  line-height: 1.25;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.elixir-grade {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  border-radius: 1rem;
+  padding: 0.6rem 0.4rem;
+  font-family: var(--font-schools-heading), var(--font-sans), sans-serif;
+  font-weight: 800;
+  color: #2a0a4a;
+  border: 2.5px solid var(--ink, #1d2f52);
+  box-shadow: 0 4px 0 var(--ink, #1d2f52);
+  transition:
+    transform 120ms,
+    box-shadow 120ms;
+}
+.elixir-grade small {
+  font-weight: 600;
+  font-size: 0.7rem;
+  opacity: 0.75;
+}
+@media (max-width: 479px) {
+  .elixir-grade small {
+    display: none;
+  }
+}
+.elixir-grade:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 var(--ink, #1d2f52);
+}
+.elixir-grade:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--ink, #1d2f52);
+}
+.elixir-grade:disabled {
+  opacity: 0.55;
+}
+.elixir-grade--AGAIN {
+  background: #ff9d8a;
+}
+.elixir-grade--HARD {
+  background: #ffd26b;
+}
+.elixir-grade--GOOD {
+  background: #8fe3a4;
+}
+.elixir-grade--EASY {
+  background: #7fd2ff;
+}
+
+/* "+3" floating up out of the card when a drop is earned. */
+@keyframes elixir-plus {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-3.2rem) scale(1.35);
+  }
+}
+.elixir-plus {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  font-family: var(--font-schools-heading), var(--font-sans), sans-serif;
+  font-weight: 800;
+  font-size: 1.6rem;
+  color: #ffd2f7;
+  text-shadow:
+    0 0 10px #ff7be8,
+    0 2px 0 #3b0f6b;
+  animation: elixir-plus 1100ms ease-out both;
+}
+
+/* A flask just got full. */
+@keyframes elixir-burst {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  35% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.elixir-burst {
+  animation: elixir-burst 650ms cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .elixir-flask__glow,
+  .elixir-flask__wave-a,
+  .elixir-flask__wave-b,
+  .elixir-flask__bubble,
+  .elixir-flask__star,
+  .elixir-flask__drop,
+  .elixir-flask__splash,
+  .elixir-stage::before,
+  .elixir-plus,
+  .elixir-burst {
+    animation: none;
+  }
+  .elixir-flask__liquid,
+  .elixir-card__inner,
+  .elixir-meter > span {
+    transition: none;
+  }
+}
